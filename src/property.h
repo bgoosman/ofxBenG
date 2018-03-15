@@ -6,6 +6,7 @@
 namespace ofxBenG {
 
 #define δ(x) (dynamic_cast<ofxBenG::property_base*>(&x))
+#define CAST_PROPERTY(x) (dynamic_cast<ofxBenG::property_base*>(&x))
 
 class property_base {
 public:

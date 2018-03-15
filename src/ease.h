@@ -63,15 +63,15 @@ public:
         
         return currentValue;
     }
-    
+
     TimeDiff getDuration() {
         return isGoingBackward ? backwardDuration : forwardDuration;
     }
-    
+
     TimeDiff getStartTime() {
         return isGoingBackward ? startTime + forwardDuration : startTime;
     }
-    
+
     TimeDiff getEndTime(float startTime) {
         return isGoingBackward ? startTime + backwardDuration : startTime + forwardDuration;
     }

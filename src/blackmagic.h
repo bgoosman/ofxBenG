@@ -1,10 +1,3 @@
-//
-//  blackmagic.h
-//  JumpRope
-//
-//  Created by MacBook Pro on 1/20/18.
-//
-
 #ifndef blackmagic_h
 #define blackmagic_h
 
@@ -13,7 +6,6 @@
 #include "pipeline/video/VideoSource.h" /* ofxPlayModes */
 
 namespace ofxBenG {
-    
     class RateTimer {
     protected:
         float lastTick, averagePeriod, smoothing;
@@ -54,16 +46,24 @@ namespace ofxBenG {
         BlackMagicVideoSource() {}
         
         ~BlackMagicVideoSource() {
-            cam.close();
+            this->close();
         }
 
-        bool setup() {
-            isSetup = true;
-            fps = 59.94f;
-            width = 1280;
-            height = 720;
-            bool result = cam.setup(width, height, fps);
-            update();
+        bool setup(float fps, float width, float height) {
+            bool result = false;
+            if (!isSetup) {
+                // Common FPS
+                // iPhone: 59.94
+                // BlackMagic Pocket Cinema: 24
+                this->fps = fps;
+                this->width = width;
+                this->height = height;
+                result = cam.setup(width, height, fps);
+                if (result) {
+                    update();
+                    isSetup = true;
+                }
+            }
             return result;
         }
         
@@ -75,6 +75,13 @@ namespace ofxBenG {
             if (isSetup) {
                 cam.update();
                 newFrame(cam.getColorPixels());
+            }
+        }
+
+        void close() {
+            if (isSetup) {
+                cam.close();
+                isSetup = false;
             }
         }
         
@@ -95,6 +102,10 @@ namespace ofxBenG {
         ofVec2f getDimensions() {
             return ofVec2f(width, height);
         }
+
+        bool isInitialized() {
+            return isSetup;
+        }
         
     private:
         float fps;
@@ -103,9 +114,8 @@ namespace ofxBenG {
         ofxPm::VideoFrame frame;
         ofxBlackMagic cam;
         RateTimer timer;
-        bool isSetup;
+        bool isSetup = false;
     };
-    
 }; /* ofxBenG */
 
 #endif /* blackmagic_h */

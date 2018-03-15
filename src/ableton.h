@@ -7,8 +7,9 @@ namespace ofxBenG {
 
 class ableton {
 public:
-	void setupLink(double beatsPerMinute) {
+	void setupLink(double beatsPerMinute, double quantum) {
 		link.setup(beatsPerMinute);
+		link.setQuantum(quantum);
 	}
     
     float getTempo() {
@@ -53,7 +54,12 @@ public:
         link.setTempo(tempo);
     }
     
-    int getBeat() {
+    float getBeat() {
+		ofxAbletonLink::Status status = link.update();
+		return status.beat;
+	}
+
+	int getRoundedBeat() {
         ofxAbletonLink::Status status = link.update();
         int beat = ((int)floor(status.beat) % (int)ceil(link.quantum())) + 1;
         return beat;
