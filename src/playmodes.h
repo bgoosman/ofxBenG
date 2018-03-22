@@ -91,7 +91,7 @@ public:
             selectVideoDeviceOrDefault(deviceName, requestedWidth, requestedHeight, requestedFps);
         }
 
-        videoDeviceCount++;
+        renderer.setup(*getHeader(0));
     }
     
     ~playmodes() {
@@ -99,6 +99,10 @@ public:
             auto& buffer = buffers[i];
             buffer.stop();
         }
+    }
+
+    void draw(float x, float y, float width, float height) {
+        renderer.draw(x, y, width, height);
     }
 
     static int beatsToFrames(float beats, float bpm, float fps) {
@@ -210,16 +214,28 @@ public:
         }
     }
 
-    VideoHeader& getHeader(int i) {
-        return headers[i];
+    float getFps(int i) {
+        return buffers[i].getFps();
     }
 
-    VideoBuffer& getBuffer(int i) {
-        return buffers[i];
+    VideoHeader* getPlayHeader() {
+        return (VideoHeader*) renderer.getSource();
     }
 
-    VideoRate& getRate() {
-        return rate;
+    void setPlayHeader(VideoHeader* header) {
+        renderer.setup(*header);
+    }
+
+    VideoHeader* getHeader(int i) {
+        return &headers[i];
+    }
+
+    VideoBuffer* getBuffer(int i) {
+        return &buffers[i];
+    }
+
+    VideoRate* getRate() {
+        return &rate;
     }
 
     float getWidth() {
@@ -289,6 +305,10 @@ public:
     ofxPm::VideoHeader& getCurrentHeader() {
         return headers[currentBuffer];
     }
+
+    ofxPm::BasicVideoRenderer* getRenderer() {
+        return &renderer;
+    }
     
     ofTexture& getBufferTexture(int index) {
         return renderers[index].getNextTexture();
@@ -315,7 +335,8 @@ public:
     ofxPm::BasicVideoRenderer renderers[bufferCount];
     ofxPm::VideoRate rate;
     ofxBenG::BlackMagicVideoSource* blackMagic;
-    
+    ofxPm::BasicVideoRenderer renderer;
+
     float videoWidth, videoHeight;
     float beatsPerMinute;
     float forwardRatio;
@@ -324,7 +345,6 @@ public:
     int currentBuffer;
     int delay;
     int fps;
-    int videoDeviceCount = 0;
     static int const bufferSize = 600;
 
 private:

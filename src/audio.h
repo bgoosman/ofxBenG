@@ -18,7 +18,9 @@ namespace ofxBenG {
 
     class audio {
     public:
-        audio() {}
+        audio(int sampleRate, int channelCount, int audioBufferSize) {
+            ofxMaxiSettings::setup(sampleRate, channelCount, audioBufferSize);
+        }
         ~audio() {}
 
         void setSample(ofxMaxiSample *s) {
@@ -26,12 +28,10 @@ namespace ofxBenG {
         }
 
         void add(mix_t* mix) {
-            std::cout << "adding mix" << std::endl;
             mixes.push_back(mix);
         }
 
         void remove(mix_t* mix) {
-            std::cout << "removing mix" << std::endl;
             mixes.erase(std::remove(mixes.begin(), mixes.end(), mix), mixes.end());
         }
 
@@ -45,7 +45,6 @@ namespace ofxBenG {
         }
 
     private:
-        ofxMaxiOsc oscillator;
         ofxMaxiSample* sample = nullptr;
         std::vector<mix_t*> mixes;
     };
