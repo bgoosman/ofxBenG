@@ -137,6 +137,7 @@ namespace ofxBenG {
 
         void onPushSwitchUpdate(ofxMidiFighterTwister::PushSwitchEventArgs& a) {
             std::cout << "onPushSwitchUpdate(" << a.ID << "): value=" << a.value << std::endl;
+            ofNotifyEvent(onEncoderPressed, a.ID);
         }
 
         void onSideButtonPressed(ofxMidiFighterTwister::SideButtonEventArgs & a) {
@@ -159,6 +160,7 @@ namespace ofxBenG {
         static int const midiMin = 0;
         static int const midiMax = 127;
         static int const encoderCount = 64;
+        ofEvent<int> onEncoderPressed;
     private:
         ofxBenG::encoder* encoders[encoderCount];
         ofxMidiFighterTwister midiFighterTwister;

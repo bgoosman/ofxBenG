@@ -470,7 +470,24 @@ namespace ofxBenG {
             schedule(new resume_recording_action(buffer), nextStutter);
         }
 
-        static stutter* make_random(float beat, property<float>& bpm, ofxBenG::playmodes* playModes, ofxMaxiSample* sample, ofxBenG::audio* audio) {
+        static stutter* make_random(float beat, float bpm, float recordLengthBeats, float stutterLengthBeats,
+                ofxBenG::playmodes* playModes, ofxMaxiSample* sample, ofxBenG::audio* audio) {
+            int minTimes, maxTimes;
+            if (stutterLengthBeats < 1) {
+                minTimes = 3;
+                maxTimes = 8;
+            } else if (1 <= stutterLengthBeats && stutterLengthBeats < 3) {
+                minTimes = 1;
+                maxTimes = 8;
+            } else {
+                minTimes = 1;
+                maxTimes = 4;
+            }
+            int const stutterTimes = (int)ofRandom(minTimes, maxTimes);
+            return new stutter(beat, recordLengthBeats, stutterLengthBeats, bpm, stutterTimes, playModes, sample, audio);
+        }
+
+        static stutter* make_random(float beat, float bpm, ofxBenG::playmodes* playModes, ofxMaxiSample* sample, ofxBenG::audio* audio) {
             float const stutterLengthBeats = ofRandom(0.1, 4);
             float const recordLengthBeats = ofRandom(stutterLengthBeats, 4);
             int minTimes, maxTimes;
@@ -547,12 +564,16 @@ namespace ofxBenG {
             schedule(new resume_recording_action(buffer), recordLengthBeats + stutterLengthBeats);
         }
 
-        static rewind* make_random(float beat, ofxBenG::property<float>& bpm,
-                ofxBenG::playmodes* playModes,
+        static rewind* make_random(float beat, float bpm, float recordLengthBeats, float rewindLengthBeats,
+                ofxBenG::playmodes* playModes, ofxMaxiSample* forwardSample, ofxMaxiSample* backwardSample, ofxBenG::audio* audio) {
+            return new rewind(beat, recordLengthBeats, rewindLengthBeats, bpm, playModes, forwardSample, backwardSample, audio);
+        }
+
+        static rewind* make_random(float beat, float bpm, ofxBenG::playmodes* playModes,
                 ofxMaxiSample* forwardSample, ofxMaxiSample* backwardSample, ofxBenG::audio* audio) {
             float const recordLengthBeats = 6;
-            float const stutterLengthBeats = ofRandom(3, 6);
-            return new rewind(beat, recordLengthBeats, stutterLengthBeats, bpm, playModes, forwardSample, backwardSample, audio);
+            float const rewindLengthBeats = ofRandom(3, 6);
+            return new rewind(beat, recordLengthBeats, rewindLengthBeats, bpm, playModes, forwardSample, backwardSample, audio);
         }
 
         ~rewind() {
@@ -594,11 +615,13 @@ namespace ofxBenG {
 
     class effect_generator : public beat_action {
     public:
-        effect_generator(float beat, ofxBenG::property<float>& bpm, ofxBenG::playmodes* playModes,
-                ofxMaxiSample* forwardSample, ofxMaxiSample* backwardSample, ofxBenG::audio* audio)
-                : beat_action(beat), bpm(bpm), playModes(playModes), forwardSample(forwardSample),
-                  backwardSample(backwardSample), audio(audio) {
-        };
+        effect_generator(float beat, ofxBenG::property<float>& bpm, ofxBenG::property<float>& recordLengthBeats,
+                ofxBenG::property<float>& rewindLengthBeats, ofxBenG::property<float>& stutterLengthBeats,
+                ofxBenG::playmodes* playModes, ofxMaxiSample* forwardSample, ofxMaxiSample* backwardSample, ofxBenG::audio* audio)
+                : beat_action(beat), bpm(bpm), recordLengthBeats(recordLengthBeats),
+                  rewindLengthBeats(rewindLengthBeats), stutterLengthBeats(stutterLengthBeats),
+                  playModes(playModes), forwardSample(forwardSample), backwardSample(backwardSample), audio(audio),
+                  totalEffectsScheduled(0) {};
         virtual ~effect_generator() {}
 
         virtual void startThisAction(float beat) {
@@ -630,25 +653,31 @@ namespace ofxBenG {
             float const delay = ofRandom(minBeatsBetweenEffects, maxBeatsBetweenEffects);
             float const futureBeat = beat + delay;
             schedule(makeRandomEffect(futureBeat), delay);
+            ofNotifyEvent(onEffectScheduled, ++totalEffectsScheduled);
         }
 
         beat_action* makeRandomEffect(float beat) {
             beat_action* action = nullptr;
             float r = ofRandom(1);
             if (r < 0.25) {
-                stutter* s = stutter::make_random(beat, bpm, playModes, forwardSample, audio);
+                stutter* s = stutter::make_random(beat, bpm, recordLengthBeats, stutterLengthBeats, playModes, forwardSample, audio);
                 action = s;
             } else {
-                rewind* r = rewind::make_random(beat, bpm, playModes, forwardSample, backwardSample, audio);
+                rewind* r = rewind::make_random(beat, bpm, recordLengthBeats, rewindLengthBeats, playModes, forwardSample, backwardSample, audio);
                 action = r;
             }
             return action;
         }
 
+        ofEvent<int> onEffectScheduled;
+        int totalEffectsScheduled;
     private:
-        float minBeatsBetweenEffects = 5;
-        float maxBeatsBetweenEffects = 10;
+        float minBeatsBetweenEffects = 2.999;
+        float maxBeatsBetweenEffects = 3.001;
         ofxBenG::property<float>& bpm;
+        ofxBenG::property<float>& recordLengthBeats;
+        ofxBenG::property<float>& rewindLengthBeats;
+        ofxBenG::property<float>& stutterLengthBeats;
         ofxMaxiSample* forwardSample;
         ofxMaxiSample* backwardSample;
         ofxBenG::playmodes* playModes;
