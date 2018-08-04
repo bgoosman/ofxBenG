@@ -64,9 +64,12 @@ class playmodes {
 public:
     static const std::string blackmagic;
     static const std::string c920;
+    static const std::string c615;
     static const std::string ps3eye;
+    static const std::string facetime;
 
-    playmodes(const std::string& deviceName, float requestedWidth, float requestedHeight, float requestedFps) {
+    playmodes(const std::string& deviceName, float requestedWidth, float requestedHeight, float requestedFps, int defaultBufferSize)
+        : defaultBufferSize(defaultBufferSize) {
         grabbers = grabber.listDevices();
         blackMagic = new BlackMagicVideoSource();
 
@@ -105,15 +108,46 @@ public:
         renderer.draw(x, y, width, height);
     }
 
-    static int beatsToFrames(float beats, float bpm, float fps) {
-        return beats * (1 / bpm) * 60.0 * fps;
-    }
-
     bool isInitialized() {
         return isAllocated;
     }
-    
-    void drawColumns(int columns) {
+
+    void drawLastBufferFrame(int i, float x, float y, float w, float h) {
+        auto& buffer = buffers[i];
+        if (isAllocated && buffer.size() > 0) {
+            auto frame = buffer.getVideoFrame((int)(buffer.size() - 1));
+            auto texture = frame.getTextureRef();
+            texture.drawSubsection(x, y, w, h, 0, 0, videoWidth, videoHeight);
+        }
+    }
+
+    void drawHeader(int column, float x, float y, float w, float h) {
+        auto header = headers[column];
+        if (isAllocated && header != nullptr && header->getBuffer()->size() > 0) {
+            ofTexture &rendererTexture = getBufferTexture(column);
+            rendererTexture.drawSubsection(x, y, w, h, 0, 0, videoWidth, videoHeight);
+        }
+    }
+
+    void drawColumn(int column) {
+        if (isAllocated && buffers[column].size() > 0) {
+            auto bufferCount = getBufferCount();
+            auto columnWidth = ofGetWidth() / bufferCount;
+            auto columnHeight = ofGetHeight();
+            auto videoWidth = getWidth();
+            auto videoHeight = getHeight();
+            auto x = 0.0;
+            auto thisColumnWidth = (videoWidth < columnWidth) ? videoWidth : columnWidth;
+            auto thisColumnHeight = (videoHeight < columnHeight) ? videoHeight : columnHeight;
+            auto cropX = (thisColumnWidth < videoWidth) ? videoWidth / 3.0f : 0.0f;
+            auto cropWidth = (thisColumnWidth < videoWidth) ? thisColumnWidth : videoWidth;
+            auto y = (videoHeight < ofGetHeight()) ? ofGetHeight() / 2.0f - thisColumnHeight / 2.0f : 0.0f;
+            ofTexture &rendererTexture = getBufferTexture(column);
+            rendererTexture.drawSubsection(x, y, thisColumnWidth, thisColumnHeight, cropX, 0, thisColumnWidth, videoHeight);
+        }
+    }
+
+    void drawColumns(int columns, bool reverseColumns) {
         if (isAllocated) {
             auto bufferCount = getBufferCount();
             auto columnWidth = ofGetWidth() / columns;
@@ -123,12 +157,16 @@ public:
             auto x = 0.0;
 
             for (int i = 0; i < columns; i++, x += columnWidth) {
+                int column = i;
+                if (reverseColumns) {
+                    column = columns - column - 1;
+                }
                 auto thisColumnWidth = (videoWidth < columnWidth) ? videoWidth : columnWidth;
                 auto thisColumnHeight = (videoHeight < columnHeight) ? videoHeight : columnHeight;
                 auto cropX = (thisColumnWidth < videoWidth) ? videoWidth / 3.0f : 0.0f;
                 auto cropWidth = (thisColumnWidth < videoWidth) ? thisColumnWidth : videoWidth;
                 auto y = (videoHeight < ofGetHeight()) ? ofGetHeight() / 2.0f - thisColumnHeight / 2.0f : 0.0f;
-                ofTexture &rendererTexture = getBufferTexture(i);
+                ofTexture &rendererTexture = getBufferTexture(column);
                 rendererTexture.drawSubsection(x, y, thisColumnWidth, thisColumnHeight, cropX, 0, thisColumnWidth, videoHeight);
             }
         }
@@ -164,6 +202,10 @@ public:
             std::cout << "switched rate to blackmagic" << std::endl;
         }
     }
+
+    void swapVideoDevice(const std::string& deviceName) {
+        selectVideoDeviceOrDefault(deviceName, videoWidth, videoHeight, fps);
+    }
     
     void selectVideoDeviceOrDefault(const std::string& deviceName, float requestedWidth, float requestedHeight, float requestedFps) {
         if (!grabber.isInitialized()) {
@@ -175,8 +217,9 @@ public:
                 }
             }
 
-            grabber.initGrabber(requestedWidth, requestedHeight);
+            grabber.setDesiredFrameRate(requestedFps);
             grabber.setFps(requestedFps);
+            grabber.initGrabber(requestedWidth, requestedHeight);
             videoWidth = grabber.getWidth();
             videoHeight = grabber.getHeight();
         }
@@ -189,14 +232,15 @@ public:
             for (int i = 0; i < bufferCount; i++) {
                 bool const allocateOnSetup = true;
                 auto &buffer = buffers[i];
-                buffer.setup(rate, bufferSize, allocateOnSetup);
+                buffer.setup(rate, defaultBufferSize, allocateOnSetup);
+                buffer.setBufIndex(i);
+                buffer.stop();
 
-                auto &header = headers[i];
-                header.setup(buffer);
-                header.setDelayMs(0);
+                headers[i] = new ofxPm::VideoHeader(buffer);
+                headers[i]->setDelayMs(0);
 
                 auto &renderer = renderers[i];
-                renderer.setup(headers[i]);
+                renderer.setup(*headers[i]);
             }
 
             isAllocated = true;
@@ -227,7 +271,13 @@ public:
     }
 
     VideoHeader* getHeader(int i) {
-        return &headers[i];
+        return headers[i];
+    }
+
+    void setHeader(int i, VideoHeader* header) {
+        delete headers[i];
+        headers[i] = header;
+        renderers[i].setup(*header);
     }
 
     VideoBuffer* getBuffer(int i) {
@@ -251,19 +301,19 @@ public:
     }
     
     void setDelay(float _delay) {
-        delay = ofMap(_delay, 1.0, 0.0, 0, bufferSize);
-        getCurrentHeader().setDelayFrames(delay);
+        delay = ofMap(_delay, 1.0, 0.0, 0, defaultBufferSize);
+        getCurrentHeader()->setDelayFrames(delay);
     }
     
     void setDelayPercent(float percent) {
         for (auto header : headers) {
-            header.setDelayPct(percent);
+            header->setDelayPct(percent);
         }
     }
     
     void setFps(int _fps) {
         rate.setFps(_fps);
-        getCurrentHeader().setFps(_fps);
+        getCurrentHeader()->setFps(_fps);
     }
     
     void toggleRecording() {
@@ -302,7 +352,7 @@ public:
         return buffers[currentBuffer];
     }
     
-    ofxPm::VideoHeader& getCurrentHeader() {
+    ofxPm::VideoHeader* getCurrentHeader() {
         return headers[currentBuffer];
     }
 
@@ -316,7 +366,7 @@ public:
     
     float getBufferDuration(int index) {
         auto& buffer = buffers[index];
-        return (float)bufferSize / (float)buffer.getRealFPS();
+        return (float)defaultBufferSize / (float)buffer.getRealFPS();
     }
     
     int getBufferCount() {
@@ -324,14 +374,14 @@ public:
     }
     
     void setDelayPercent(int index, float percent) {
-        headers[index].setDelayPct(percent);
+        headers[index]->setDelayPct(percent);
     }
 
     std::map<ofxPm::VideoFormat, std::vector<ofPtr<ofxPm::VideoFrame::Obj>>>* pool;
     ofxPm::VideoGrabber grabber;
-    static int const bufferCount = 1;
+    static int const bufferCount = 3;
     ofxPm::VideoBuffer buffers[bufferCount];
-    ofxPm::VideoHeader headers[bufferCount];
+    ofxPm::VideoHeader* headers[bufferCount];
     ofxPm::BasicVideoRenderer renderers[bufferCount];
     ofxPm::VideoRate rate;
     ofxBenG::BlackMagicVideoSource* blackMagic;
@@ -345,7 +395,7 @@ public:
     int currentBuffer;
     int delay;
     int fps;
-    static int const bufferSize = 600;
+    int defaultBufferSize;
 
 private:
     bool isAllocated = false;
