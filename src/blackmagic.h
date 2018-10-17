@@ -2,8 +2,9 @@
 #define blackmagic_h
 
 #include "ofxBlackMagic.h"
-#include "frames/VideoFrame.h" /* ofxPlayModes */
-#include "pipeline/video/VideoSource.h" /* ofxPlayModes */
+#include "ofxPlaymodes.h"
+//#include "frames/VideoFrame.h" /* ofxPlayModes */
+//#include "pipeline/video/VideoSource.h" /* ofxPlayModes */
 
 namespace ofxBenG {
     class RateTimer {
@@ -41,7 +42,7 @@ namespace ofxBenG {
         }
     };
 
-    class BlackMagicVideoSource : public ofxPm::VideoSource {
+    class BlackMagicVideoSource : public ofxPm::VideoGrabber {
     public:
         BlackMagicVideoSource() {}
         
@@ -52,7 +53,6 @@ namespace ofxBenG {
         bool setup(float fps, float width, float height) {
             bool result = false;
             if (!isSetup) {
-                // Common FPS
                 // iPhone: 59.94
                 // BlackMagic Pocket Cinema: 24
                 this->fps = fps;

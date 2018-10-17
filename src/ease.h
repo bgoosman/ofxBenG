@@ -4,6 +4,7 @@
 #include "ofxEasing.h"
 #include "Poco/Timestamp.h"
 #include <algorithm>
+#include "ofxBenG.h"
 
 namespace ofxBenG {
 

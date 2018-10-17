@@ -1,10 +1,3 @@
-//
-//  oscWrapper.h
-//  JumpRope
-//
-//  Created by MacBook Pro on 12/29/17.
-//
-
 #ifndef oscWrapper_h
 #define oscWrapper_h
 

@@ -5,6 +5,7 @@
 #include <functional>
 #include <utility>
 #include "ofxMaxim.h"
+#include "property.h"
 
 namespace ofxBenG {
     typedef std::function<float()> MixFunction;
