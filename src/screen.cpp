@@ -31,7 +31,6 @@ void screen::makeWindow(ofxBenG::monitor *monitor) {
     }
     ofGLFWWindowSettings settings;
     settings.monitor = monitor->getId();
-//    settings.windowMode = OF_FULLSCREEN;
     settings.shareContextWith = parentWindow;
     myWindow = ofCreateWindow(settings);
     ofAddListener(myWindow->events().draw, this, &screen::draw);
@@ -42,7 +41,7 @@ void screen::close() {
     if (!isClosing) {
         std::cout << "Screen of " << stream->getDeviceName() << " is closing" << std::endl;
         setFullscreen(false);
-        monitor->setScreen(nullptr);
+        monitor->detachScreen();
         monitor = nullptr;
         isClosing = true;
         delete renderer;
@@ -54,6 +53,28 @@ void screen::close() {
 void screen::draw(ofEventArgs &args) {
     ofPoint size = myWindow->getWindowSize();
     renderer->draw(0, 0, size[0], size[1]);
+    if (isBlackout) {
+        ofPushStyle();
+        ofSetColor(ofColor::black);
+        ofDrawRectangle(0, 0, size[0], size[1]);
+        ofPopStyle();
+    }
+}
+
+void screen::maximize() {
+    if (this->monitor != nullptr) {
+        auto glfwMonitor = this->monitor->getGlfwMonitor();
+        int monitorX, monitorY;
+        glfwGetMonitorPos(glfwMonitor, &monitorX, &monitorY);
+        this->setWindowPosition(monitorX, monitorY);
+        const GLFWvidmode *mode = glfwGetVideoMode(glfwMonitor);
+        this->setWindowShape(mode->width, mode->height);
+        this->setFullscreen(true);
+    }
+}
+
+void screen::setBlackout(bool enabled) {
+    isBlackout = enabled;
 }
 
 void screen::setMonitor(ofxBenG::monitor *monitor) {

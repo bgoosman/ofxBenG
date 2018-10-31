@@ -20,6 +20,10 @@ namespace ofxBenG {
 
         void draw(ofEventArgs &args);
 
+        void maximize();
+
+        void setBlackout(bool enabled);
+
         void setMonitor(ofxBenG::monitor *monitor);
 
         void setWindowPosition(int x, int y);
@@ -40,6 +44,7 @@ namespace ofxBenG {
         shared_ptr<ofAppBaseWindow> myWindow;
         shared_ptr<ofAppBaseWindow> parentWindow;
         bool isClosing = false;
+        bool isBlackout = false;
     };
 }
 

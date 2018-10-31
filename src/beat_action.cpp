@@ -81,3 +81,20 @@ void beat_action::queueTriggeredActions(float currentBeat) {
 float beat_action::getTriggerBeat() {
     return triggerBeat;
 }
+
+flicker::flicker(ofxBenG::screen *screen, float blackoutLengthBeats, float videoLengthBeats) :
+        screen(screen), blackoutLengthBeats(blackoutLengthBeats), videoLengthBeats(videoLengthBeats) {
+}
+
+void flicker::startThisAction(float currentBeat) {
+    schedule(new generic_action([this]() { this->screen->setBlackout(true); }), currentBeat, 0);
+    schedule(new generic_action([this]() { this->screen->setBlackout(false); }), currentBeat, blackoutLengthBeats);
+}
+
+bool flicker::isThisActionDone(float currentBeat) {
+    return true;
+}
+
+std::string flicker::getLabel() {
+    return "Flicker";
+}

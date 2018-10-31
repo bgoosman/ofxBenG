@@ -42,15 +42,22 @@ int monitor::getId() {
 
 void monitor::setScreen(ofxBenG::screen* screen) {
     myScreen = screen;
-    if (glfwMonitor != NULL) {
-        myScreen = screen;
-        int monitorX, monitorY;
-        glfwGetMonitorPos(glfwMonitor, &monitorX, &monitorY);
-        myScreen->setWindowPosition(monitorX, monitorY);
-        const GLFWvidmode *mode = glfwGetVideoMode(glfwMonitor);
-        myScreen->setWindowShape(mode->width, mode->height);
-        myScreen->setFullscreen(true);
+    if (myScreen != nullptr) {
+        moveToOrigin(myScreen);
+        maximize(myScreen);
     }
+}
+
+void monitor::maximize(ofxBenG::screen *screen) {
+    const GLFWvidmode *mode = glfwGetVideoMode(this->glfwMonitor);
+    this->myScreen->setWindowShape(mode->width, mode->height);
+    this->myScreen->setFullscreen(true);
+}
+
+void monitor::moveToOrigin(ofxBenG::screen *screen) {
+    int monitorX, monitorY;
+    glfwGetMonitorPos(glfwMonitor, &monitorX, &monitorY);
+    myScreen->setWindowPosition(monitorX, monitorY);
 }
 
 ofxBenG::screen *monitor::getScreen() {
@@ -59,6 +66,10 @@ ofxBenG::screen *monitor::getScreen() {
 
 void monitor::setRemoved() {
     glfwMonitor = NULL;
+}
+
+void monitor::detachScreen() {
+    myScreen = nullptr;
 }
 
 GLFWmonitor* monitor::getGlfwMonitor() {

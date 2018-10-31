@@ -21,7 +21,13 @@ namespace ofxBenG {
 
         ofxBenG::screen *getScreen();
 
+        void maximize(ofxBenG::screen *screen);
+
+        void moveToOrigin(ofxBenG::screen *screen);
+
         void setRemoved();
+
+        void detachScreen();
 
         GLFWmonitor *getGlfwMonitor();
 

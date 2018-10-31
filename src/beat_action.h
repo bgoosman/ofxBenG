@@ -52,7 +52,6 @@ namespace ofxBenG {
         float triggerBeat;
     };
 
-
     class record_action : public beat_action {
     public:
         record_action(ofxPm::VideoBuffer *buffer) : buffer(buffer) {
@@ -179,6 +178,19 @@ namespace ofxBenG {
         float fps;
         bool playForwards;
         ofxPm::VideoHeader *header;
+    };
+
+    class flicker : public beat_action {
+    public:
+        flicker(ofxBenG::screen *screen, float blackoutLengthBeats, float videoLengthBeats);
+        virtual void startThisAction(float currentBeat);
+        virtual bool isThisActionDone(float currentBeat);
+        virtual std::string getLabel();
+
+    private:
+        ofxBenG::screen *screen;
+        float blackoutLengthBeats;
+        float videoLengthBeats;
     };
 
     class reverse_audio : public beat_action {
@@ -314,6 +326,14 @@ namespace ofxBenG {
     public:
         timeline() : beat_action() {
         };
+
+        virtual void startThisAction(float currentBeat) {
+
+        }
+
+        virtual bool isThisActionDone(float currentBeat) {
+            return false;
+        }
 
         virtual std::string getLabel() {
             return "Timeline";
