@@ -4,7 +4,7 @@
 #include "ofxPlaymodes.h"
 
 namespace ofxBenG {
-    class screen;
+    class window;
     class monitor;
     class video_stream {
     public:
@@ -16,9 +16,9 @@ namespace ofxBenG {
 
         void draw();
 
-        ofxBenG::screen *makeScreen(std::shared_ptr<ofAppBaseWindow> parentWindow, ofxBenG::monitor *monitor);
+        void setScreen(ofxBenG::window* window);
 
-        ofxBenG::screen *getScreen();
+        ofxBenG::window *getScreen();
 
         int addBuffer();
 
@@ -36,7 +36,7 @@ namespace ofxBenG {
         std::string deviceName;
         std::vector<ofxPm::VideoBuffer *> buffers;
         int defaultBufferSize;
-        ofxBenG::screen *screen;
+        ofxBenG::window *screen;
     };
 }
 

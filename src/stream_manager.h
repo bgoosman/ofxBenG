@@ -5,13 +5,13 @@
 #include "ofxPlaymodes.h"
 #include "blackmagic.h"
 #include "video_stream.h"
-#include "screen.h"
+#include "window.h"
 
 namespace ofxBenG {
 
     using namespace ofxPm;
 
-    class playmodes {
+    class stream_manager {
     public:
         static const std::string blackmagic;
         static const std::string c920;
@@ -19,14 +19,14 @@ namespace ofxBenG {
         static const std::string ps3eye;
         static const std::string facetime;
 
-        playmodes(float defaultWidth, float defaultHeight, float defaultFps, int defaultBufferSize)
+        stream_manager(float defaultWidth, float defaultHeight, float defaultFps, int defaultBufferSize)
                 : defaultBufferSize(defaultBufferSize),
                   defaultWidth(defaultWidth),
                   defaultHeight(defaultHeight),
                   defaultFps(defaultFps) {
         }
 
-        playmodes(const std::string &deviceName, float defaultWidth, float defaultHeight, float defaultFps)
+        stream_manager(const std::string &deviceName, float defaultWidth, float defaultHeight, float defaultFps)
                 : defaultBufferSize(defaultBufferSize),
                   defaultWidth(defaultWidth),
                   defaultHeight(defaultHeight),
@@ -34,7 +34,7 @@ namespace ofxBenG {
             addVideoStream(deviceName);
         }
 
-        ~playmodes() {
+        ~stream_manager() {
             std::cout << "playmodes is closing" << std::endl;
             for (auto stream : streams) {
                 delete stream;
@@ -172,7 +172,7 @@ namespace ofxBenG {
             grabber->setup(videoWidth, videoHeight);
             grabber->initGrabber(videoWidth, videoHeight);
             grabber->update();
-            auto stream = new video_stream(ofxBenG::playmodes::ps3eye, grabber, defaultBufferSize);
+            auto stream = new video_stream(ofxBenG::stream_manager::ps3eye, grabber, defaultBufferSize);
             streams.push_back(stream);
             std::cout << "PS3 Eye capturing at resolution (" << videoWidth << ", " << videoHeight << ")" << std::endl;
             return stream;
@@ -181,11 +181,11 @@ namespace ofxBenG {
         video_stream *addBlackMagic() {
             // BlackMagic Pocket Cinema: 24fps, 1920x1080
             // iPhone: 59.94fps, 1280x720
-            auto stream = findStream(ofxBenG::playmodes::blackmagic);
+            auto stream = findStream(ofxBenG::stream_manager::blackmagic);
             if (stream == nullptr) {
                 auto grabber = new ofxBenG::BlackMagicVideoSource();
                 if (grabber->setup(defaultFps, defaultWidth, defaultHeight)) {
-                    auto stream = new video_stream(ofxBenG::playmodes::blackmagic, (ofxPm::VideoGrabber *) grabber, defaultBufferSize);
+                    auto stream = new video_stream(ofxBenG::stream_manager::blackmagic, (ofxPm::VideoGrabber *) grabber, defaultBufferSize);
                     ofVec2f dimensions = grabber->getDimensions();
                     std::cout << "capturing at resolution (" << dimensions[0] << ", " << dimensions[1] << ")"
                               << std::endl;

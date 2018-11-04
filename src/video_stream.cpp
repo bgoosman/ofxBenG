@@ -1,5 +1,5 @@
 #include "video_stream.h"
-#include "screen.h"
+#include "window.h"
 #include "monitor.h"
 
 using namespace ofxBenG;
@@ -39,14 +39,11 @@ void video_stream::draw() {
     }
 }
 
-ofxBenG::screen *video_stream::makeScreen(std::shared_ptr<ofAppBaseWindow> parentWindow, ofxBenG::monitor *monitor) {
-    screen = new ofxBenG::screen(this, parentWindow, monitor);
-    screen->setMonitor(monitor);
-    monitor->setScreen(screen);
-    return screen;
+void video_stream::setScreen(ofxBenG::window *window) {
+    this->screen = window;
 }
 
-ofxBenG::screen *video_stream::getScreen() {
+ofxBenG::window *video_stream::getScreen() {
     return screen;
 }
 

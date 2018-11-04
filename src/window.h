@@ -8,11 +8,11 @@
 namespace ofxBenG {
     class monitor;
 
-    class screen {
+    class window {
     public:
-        screen(ofxBenG::video_stream *stream, std::shared_ptr<ofAppBaseWindow> parentWindow, ofxBenG::monitor *monitor);
+        window(std::shared_ptr<ofAppBaseWindow> parentWindow);
 
-        ~screen();
+        ~window();
 
         void exit(ofEventArgs &args);
 
@@ -20,19 +20,17 @@ namespace ofxBenG {
 
         void draw(ofEventArgs &args);
 
-        void maximize();
+        void setMonitor(ofxBenG::monitor *monitor);
+
+        void setStream(ofxBenG::video_stream *stream);
 
         void setBlackout(bool enabled);
-
-        void setMonitor(ofxBenG::monitor *monitor);
 
         void setWindowPosition(int x, int y);
 
         void setWindowShape(int x, int y);
 
         void setFullscreen(bool enabled);
-
-        void makeWindow(ofxBenG::monitor *monitor);
 
         ofxBenG::video_stream* getStream();
 

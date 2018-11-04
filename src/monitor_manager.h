@@ -15,10 +15,6 @@ namespace ofxBenG {
 
         void update();
 
-        ofxBenG::monitor *getLastMonitor();
-
-        ofxBenG::monitor *getUnusedMonitor();
-
         ofEvent<ofxBenG::monitor> onMonitorAdded;
         ofEvent<ofxBenG::monitor> onMonitorRemoved;
 
@@ -29,7 +25,11 @@ namespace ofxBenG {
 
         void removeStale(GLFWmonitor **glfwMonitors, int count);
 
+        bool isMonitorExcluded(std::string);
+
         std::vector<ofxBenG::monitor *> monitors;
+
+        std::vector<std::string> excludedMonitors;
     };
 
 }

@@ -6,7 +6,7 @@
 #include "VideoRate.h"
 #include "ease.h"
 #include "beat_action.h"
-#include "playmodes.h"
+#include "stream_manager.h"
 #include "maxim.h"
 #include <algorithm>
 #include <vector>

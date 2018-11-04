@@ -7,7 +7,7 @@
 namespace ofxBenG {
 
     class monitor_manager;
-    class screen;
+    class window;
     class monitor {
     public:
         monitor(GLFWmonitor *glfwMonitor, ofxBenG::monitor_manager *monitorManager, int id);
@@ -17,17 +17,7 @@ namespace ofxBenG {
 
         int getId();
 
-        void setScreen(ofxBenG::screen *screen);
-
-        ofxBenG::screen *getScreen();
-
-        void maximize(ofxBenG::screen *screen);
-
-        void moveToOrigin(ofxBenG::screen *screen);
-
-        void setRemoved();
-
-        void detachScreen();
+        ofxBenG::window *getScreen();
 
         GLFWmonitor *getGlfwMonitor();
 
@@ -39,13 +29,10 @@ namespace ofxBenG {
 
     private:
         GLFWmonitor *glfwMonitor;
-        ofxBenG::screen *myScreen;
+        ofxBenG::window *myScreen;
         ofxBenG::monitor_manager *monitorManager;
         std::string name;
         ofPoint size;
-        ofPoint position;
-        int updateDelayMs = 0;
-        int targetUpdateTimeMs;
         int id;
     };
 

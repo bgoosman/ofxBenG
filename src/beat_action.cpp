@@ -82,7 +82,7 @@ float beat_action::getTriggerBeat() {
     return triggerBeat;
 }
 
-flicker::flicker(ofxBenG::screen *screen, float blackoutLengthBeats, float videoLengthBeats) :
+flicker::flicker(ofxBenG::window *screen, float blackoutLengthBeats, float videoLengthBeats) :
         screen(screen), blackoutLengthBeats(blackoutLengthBeats), videoLengthBeats(videoLengthBeats) {
 }
 

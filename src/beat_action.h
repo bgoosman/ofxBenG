@@ -182,13 +182,13 @@ namespace ofxBenG {
 
     class flicker : public beat_action {
     public:
-        flicker(ofxBenG::screen *screen, float blackoutLengthBeats, float videoLengthBeats);
+        flicker(ofxBenG::window *screen, float blackoutLengthBeats, float videoLengthBeats);
         virtual void startThisAction(float currentBeat);
         virtual bool isThisActionDone(float currentBeat);
         virtual std::string getLabel();
 
     private:
-        ofxBenG::screen *screen;
+        ofxBenG::window *screen;
         float blackoutLengthBeats;
         float videoLengthBeats;
     };
