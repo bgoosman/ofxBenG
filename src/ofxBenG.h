@@ -14,6 +14,7 @@
 #include "maxim.h"
 #include "monitor_manager.h"
 #include "window_manager.h"
+#include "window_view.h"
 #include "monitor.h"
 #include "beat_action.h"
 #include "syphon.h"

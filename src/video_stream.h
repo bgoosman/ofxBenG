@@ -16,7 +16,7 @@ namespace ofxBenG {
 
         void draw();
 
-        void setScreen(ofxBenG::window* window);
+        void setWindow(ofxBenG::window *window);
 
         ofxBenG::window *getScreen();
 

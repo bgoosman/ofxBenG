@@ -39,7 +39,7 @@ void video_stream::draw() {
     }
 }
 
-void video_stream::setScreen(ofxBenG::window *window) {
+void video_stream::setWindow(ofxBenG::window *window) {
     this->screen = window;
 }
 

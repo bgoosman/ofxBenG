@@ -8,6 +8,7 @@ window::window(std::shared_ptr<ofAppBaseWindow> parentWindow)
     renderer = nullptr;
     header = nullptr;
     monitor = nullptr;
+    stream = nullptr;
 }
 
 window::~window() {
@@ -21,6 +22,8 @@ void window::exit(ofEventArgs &args) {
 void window::close() {
     if (!isClosing) {
         isClosing = true;
+        if (stream != nullptr)
+            stream->setWindow(nullptr);
         stream = nullptr;
         if (renderer != nullptr)
             delete renderer;
@@ -31,16 +34,18 @@ void window::close() {
 }
 
 void window::draw(ofEventArgs &args) {
-    ofPoint size = myWindow->getWindowSize();
-    if (renderer != nullptr) {
-        renderer->draw(0, 0, size[0], size[1]);
+    ofPoint windowSize = myWindow->getWindowSize();
+    for (auto view : views) {
+        view->draw(windowSize);
     }
-    if (isBlackout) {
-        ofPushStyle();
-        ofSetColor(ofColor::black);
-        ofDrawRectangle(0, 0, size[0], size[1]);
-        ofPopStyle();
-    }
+}
+
+void window::addView(ofxBenG::window_view *view) {
+    views.push_back(view);
+}
+
+void window::removeView(ofxBenG::window_view *view) {
+    views.erase(std::remove(views.begin(), views.end(), view), views.end());
 }
 
 void window::setStream(ofxBenG::video_stream* stream) {
@@ -50,9 +55,8 @@ void window::setStream(ofxBenG::video_stream* stream) {
         int newBuffer = this->stream->addBuffer();
         this->stream->recordInto(newBuffer);
         header = stream->makeHeader(newBuffer);
-        renderer = new ofxPm::BasicVideoRenderer;
-        renderer->setup(*header);
-        this->stream->setScreen(this);
+        this->addView(new header_view(header));
+        this->stream->setWindow(this);
     }
 }
 

@@ -4,6 +4,8 @@
 #include "ofMain.h"
 #include "ofxPlaymodes.h"
 #include "video_stream.h"
+#include "window_view.h"
+#include "header_view.h"
 
 namespace ofxBenG {
     class monitor;
@@ -20,6 +22,10 @@ namespace ofxBenG {
 
         void draw(ofEventArgs &args);
 
+        void addView(ofxBenG::window_view *view);
+
+        void removeView(ofxBenG::window_view *view);
+
         void setMonitor(ofxBenG::monitor *monitor);
 
         void setStream(ofxBenG::video_stream *stream);
@@ -32,7 +38,7 @@ namespace ofxBenG {
 
         void setFullscreen(bool enabled);
 
-        ofxBenG::video_stream* getStream();
+        ofxBenG::video_stream *getStream();
 
     private:
         ofxPm::VideoHeader *header;
@@ -41,6 +47,7 @@ namespace ofxBenG {
         ofxBenG::monitor *monitor;
         shared_ptr<ofAppBaseWindow> myWindow;
         shared_ptr<ofAppBaseWindow> parentWindow;
+        std::vector<ofxBenG::window_view *> views;
         bool isClosing = false;
         bool isBlackout = false;
     };

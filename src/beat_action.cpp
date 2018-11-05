@@ -82,13 +82,24 @@ float beat_action::getTriggerBeat() {
     return triggerBeat;
 }
 
-flicker::flicker(ofxBenG::window *screen, float blackoutLengthBeats, float videoLengthBeats) :
-        screen(screen), blackoutLengthBeats(blackoutLengthBeats), videoLengthBeats(videoLengthBeats) {
+flicker::flicker(ofxBenG::window *window, float blackoutLengthBeats, float videoLengthBeats) :
+        window(window), blackoutLengthBeats(blackoutLengthBeats), videoLengthBeats(videoLengthBeats) {
+    this->view = new flicker_view();
+}
+
+flicker::~flicker() {
+    delete this->view;
 }
 
 void flicker::startThisAction(float currentBeat) {
-    schedule(new generic_action([this]() { this->screen->setBlackout(true); }), currentBeat, 0);
-    schedule(new generic_action([this]() { this->screen->setBlackout(false); }), currentBeat, blackoutLengthBeats);
+    schedule(new generic_action([this]() {
+        window->addView(view);
+        view->setBlackout(true);
+    }), currentBeat, 0);
+    schedule(new generic_action([this]() {
+        view->setBlackout(false);
+        window->removeView(view);
+    }), currentBeat, blackoutLengthBeats);
 }
 
 bool flicker::isThisActionDone(float currentBeat) {
