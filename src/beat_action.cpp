@@ -82,24 +82,62 @@ float beat_action::getTriggerBeat() {
     return triggerBeat;
 }
 
-flicker::flicker(ofxBenG::window *window, float blackoutLengthBeats, float videoLengthBeats) :
-        window(window), blackoutLengthBeats(blackoutLengthBeats), videoLengthBeats(videoLengthBeats) {
-    this->view = new flicker_view();
+flicker::flicker(ofxBenG::video_stream *stream, float blackoutLengthBeats, float videoLengthBeats) :
+        stream(stream), blackoutLengthBeats(blackoutLengthBeats), videoLengthBeats(videoLengthBeats), isPlaying(false) {
+    int const size = ofxBenG::utilities::beatsToSeconds(videoLengthBeats, 60) * 30;
+    buffer = stream->makeBuffer(size);
+    buffer->stop();
+    header = new ofxPm::VideoHeader;
+    headerView = new header_view(header);
+    flickerView = new flicker_view();
 }
 
 flicker::~flicker() {
-    delete this->view;
+    delete flickerView;
+    delete headerView;
+    delete header;
+    delete buffer;
 }
 
 void flicker::startThisAction(float currentBeat) {
+    stream->getWindow()->addView(flickerView);
+
+    float b = 0;
     schedule(new generic_action([this]() {
-        window->addView(view);
-        view->setBlackout(true);
-    }), currentBeat, 0);
+        buffer->resume();
+    }), currentBeat, b);
+
+    b += videoLengthBeats;
     schedule(new generic_action([this]() {
-        view->setBlackout(false);
-        window->removeView(view);
-    }), currentBeat, blackoutLengthBeats);
+        buffer->stop();
+        flickerView->setBlackout(true);
+    }), currentBeat, b);
+
+    b += blackoutLengthBeats;
+    startBeat = currentBeat + b;
+    schedule(new generic_action([this]() {
+        flickerView->setBlackout(false);
+        header->setup(*buffer);
+        isPlaying = true;
+        stream->getWindow()->addView(headerView);
+    }), currentBeat, b);
+
+    b += videoLengthBeats;
+    schedule(new generic_action([this]() {
+        stream->getWindow()->removeView(flickerView);
+        stream->getWindow()->removeView(headerView);
+        isPlaying = false;
+    }), currentBeat, b);
+}
+
+void flicker::updateThisAction(float currentBeat) {
+    if (isPlaying) {
+        float amount = (currentBeat - startBeat) / videoLengthBeats;
+        float lerp = ofLerp(0, buffer->size(), amount);
+        float frames = buffer->size() - lerp;
+        std::cout << frames << std::endl;
+        header->setDelayFrames(frames);
+    }
 }
 
 bool flicker::isThisActionDone(float currentBeat) {

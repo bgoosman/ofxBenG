@@ -81,7 +81,7 @@ void window::setMonitor(ofxBenG::monitor *monitor) {
     ofAddListener(myWindow->events().exit, this, &window::exit);
     ofPoint p = monitor->getPosition();
     this->setWindowPosition(p[0], p[1]);
-    this->setFullscreen(true);
+//    this->setFullscreen(true);
 }
 
 void window::setWindowPosition(int x, int y) {

@@ -78,7 +78,7 @@ namespace ofxBenG {
         video_stream *getUnusedStream() {
             video_stream* unused = nullptr;
             for (auto stream : streams) {
-                if (stream->getScreen() == nullptr) {
+                if (stream->getWindow() == nullptr) {
                     unused = stream;
                     break;
                 }

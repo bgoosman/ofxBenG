@@ -43,7 +43,7 @@ void video_stream::setWindow(ofxBenG::window *window) {
     this->screen = window;
 }
 
-ofxBenG::window *video_stream::getScreen() {
+ofxBenG::window *video_stream::getWindow() {
     return screen;
 }
 
@@ -52,6 +52,12 @@ int video_stream::addBuffer() {
     buffer->setup(*grabber, defaultBufferSize, false);
     buffers.push_back(buffer);
     return buffers.size() - 1;
+}
+
+ofxPm::VideoBuffer *video_stream::makeBuffer(int size) {
+    auto buffer = new ofxPm::VideoBuffer();
+    buffer->setup(*grabber, size, false);
+    return buffer;
 }
 
 void video_stream::recordInto(int i) {

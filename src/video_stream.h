@@ -18,9 +18,11 @@ namespace ofxBenG {
 
         void setWindow(ofxBenG::window *window);
 
-        ofxBenG::window *getScreen();
+        ofxBenG::window *getWindow();
 
         int addBuffer();
+
+        ofxPm::VideoBuffer *makeBuffer(int size);
 
         void recordInto(int i);
 

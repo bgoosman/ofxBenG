@@ -183,17 +183,24 @@ namespace ofxBenG {
 
     class flicker : public beat_action {
     public:
-        flicker(ofxBenG::window *window, float blackoutLengthBeats, float videoLengthBeats);
+        flicker(ofxBenG::video_stream *stream, float blackoutLengthBeats, float videoLengthBeats);
         ~flicker();
         virtual void startThisAction(float currentBeat);
+        virtual void updateThisAction(float currentBeat);
         virtual bool isThisActionDone(float currentBeat);
         virtual std::string getLabel();
 
     private:
         ofxBenG::window *window;
-        ofxBenG::flicker_view *view;
+        ofxBenG::video_stream *stream;
+        ofxBenG::flicker_view *flickerView;
+        ofxBenG::header_view *headerView;
+        ofxPm::VideoBuffer *buffer;
+        ofxPm::VideoHeader *header;
         float blackoutLengthBeats;
         float videoLengthBeats;
+        float startBeat;
+        bool isPlaying;
     };
 
     class reverse_audio : public beat_action {
