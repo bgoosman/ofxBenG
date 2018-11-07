@@ -23,34 +23,29 @@ namespace ofxBenG {
 
     class beat_action {
     public:
-        beat_action() {
-        }
-
-        virtual ~beat_action() {
-        }
-
+        beat_action();
+        virtual ~beat_action();
         virtual std::string getLabel() = 0;
-        virtual void startThisAction(float currentBeat) = 0;
-        virtual void updateThisAction(float currentBeat);
-        virtual bool isThisActionDone(float currentBeat);
-        virtual float getTriggerBeat();
-        virtual void update(float currentBeat);
+        virtual void startThisAction() = 0;
+        virtual void updateThisAction() = 0;
+        virtual bool isThisActionDone();
+        virtual void schedule(float beatsFromNow, beat_action *action);
+        virtual void schedule(float beatsFromNow, std::function<void()> action);
         virtual void start(float currentBeat);
-        virtual void schedule(beat_action *action, float currentBeat, float beatsFromNow);
-        virtual void schedule(float currentBeat, float beatsFromNow, std::function<void()> action);
+        virtual void update(float currentBeat);
+        virtual float getTriggerBeat();
         virtual void setTriggerBeat(float value);
-        virtual bool isTriggered(float currentBeat);
-        virtual bool isDone(float currentBeat);
+        virtual bool isDone();
 
     protected:
         std::deque<ofxBenG::beat_action *> runningActions;
         std::priority_queue<ofxBenG::beat_action *, std::vector<ofxBenG::beat_action *>, ofxBenG::beat_action_comparator> scheduledActions;
+        float currentBeat;
 
     private:
-        virtual void updateRunningActions(float currentBeat);
-        virtual void queueTriggeredActions(float currentBeat);
+        virtual void updateRunningActions();
+        virtual void queueTriggeredActions();
         bool isScheduleDone();
-        float currentBeat;
         float triggerBeat;
     };
 
@@ -59,7 +54,7 @@ namespace ofxBenG {
         record_action(ofxPm::VideoBuffer *buffer) : buffer(buffer) {
         }
 
-        virtual void startThisAction(float currentBeat) {
+        virtual void startThisAction() {
             buffer->resume();
         }
 
@@ -76,7 +71,7 @@ namespace ofxBenG {
         stop_recording_action(ofxPm::VideoBuffer *buffer) : buffer(buffer) {
         }
 
-        virtual void startThisAction(float beat) {
+        virtual void startThisAction() {
             buffer->stop();
         }
 
@@ -96,7 +91,7 @@ namespace ofxBenG {
         virtual ~resume_recording_action() {
         };
 
-        virtual void startThisAction(float beat) {
+        virtual void startThisAction() {
             buffer->resume();
         }
 
@@ -116,7 +111,7 @@ namespace ofxBenG {
         virtual ~play_from_beginning_action() {
         };
 
-        virtual void startThisAction(float beat) {
+        virtual void startThisAction() {
             header->setLoopToStart();
             header->setPlaying(true);
         }
@@ -142,25 +137,25 @@ namespace ofxBenG {
                   targetLengthBeats(targetLengthBeats), playForwards(playForwards), bpm(bpm), fps(fps) {
         }
 
-        virtual void startThisAction(float currentBeat) {
+        virtual void startThisAction() {
             delayFrames = originalLengthBeats * (60 / bpm) * fps;
             speed = originalLengthBeats / targetLengthBeats;
             startBeat = currentBeat;
             header->setDelayFrames(playForwards ? delayFrames : 0);
-            std::cout << currentBeat << ": startBeat=" << startBeat
+            std::cout << currentBeat << ": startPlayingBeat=" << startBeat
                       << ", originalLengthBeats=" << originalLengthBeats
                       << ", targetLengthBeats=" << targetLengthBeats
                       << std::endl;
         }
 
-        virtual void updateThisAction(float currentBeat) {
+        virtual void updateThisAction() {
             float amount = (currentBeat - startBeat) / targetLengthBeats;
             float lerp = ofLerp(0, delayFrames, amount);
             float frames = (playForwards) ? delayFrames - lerp : lerp;
             header->setDelayFrames(frames);
         }
 
-        virtual bool isThisActionDone(float currentBeat) {
+        virtual bool isThisActionDone() {
             return currentBeat >= startBeat + targetLengthBeats;
         }
 
@@ -187,9 +182,9 @@ namespace ofxBenG {
         flicker(ofxBenG::video_stream *stream, float blackoutLengthBeats, float videoLengthBeats);
         ~flicker();
         virtual void draw(ofPoint windowSize);
-        virtual void startThisAction(float currentBeat);
-        virtual void updateThisAction(float currentBeat);
-        virtual bool isThisActionDone(float currentBeat);
+        virtual void startThisAction();
+        virtual void updateThisAction();
+        virtual bool isThisActionDone();
         virtual std::string getLabel();
 
     private:
@@ -199,7 +194,7 @@ namespace ofxBenG {
         ofxPm::BasicVideoRenderer *renderer;
         float blackoutLengthBeats;
         float videoLengthBeats;
-        float startBeat;
+        float startPlayingBeat;
         bool isPlaying;
         bool isBlackout;
     };
@@ -218,16 +213,16 @@ namespace ofxBenG {
             delete reverse;
         }
 
-        virtual void startThisAction(float beat) {
+        virtual void startThisAction() {
             float lengthSeconds = ofxBenG::utilities::beatsToSeconds(lengthBeats, bpm);
             reverse = new maxim_reverse(audio, forwardSample, backwardSample, lengthSeconds);
         }
 
-        virtual void updateThisAction(float beat) {
+        virtual void updateThisAction() {
             reverse->update();
         }
 
-        virtual bool isThisActionDone(float beat) {
+        virtual bool isThisActionDone() {
             return reverse->isDone();
         }
 
@@ -254,16 +249,16 @@ namespace ofxBenG {
             delete stutter;
         }
 
-        virtual void startThisAction(float beat) {
+        virtual void startThisAction() {
             float lengthSeconds = lengthBeats * (1 / (bpm / 60));
             stutter = new maxim_stutter(sample, lengthSeconds, 1);
         }
 
-        virtual void updateThisAction(float beat) {
+        virtual void updateThisAction() {
             stutter->update();
         }
 
-        virtual bool isThisActionDone(float beat) {
+        virtual bool isThisActionDone() {
             return stutter->isDone();
         }
 
@@ -291,19 +286,19 @@ namespace ofxBenG {
             audio->remove(tone);
         };
 
-        virtual void startThisAction(float currentBeat) {
+        virtual void startThisAction() {
             startBeat = currentBeat;
             audio->add(tone);
         }
 
-        virtual bool isThisActionDone(float currentBeat) {
+        virtual bool isThisActionDone() {
             return currentBeat >= startBeat + durationBeats;
         }
 
         virtual std::string getLabel() {
             return ofToString("Play Tone")
                     + "{frequency: " + ofToString(frequency)
-                    + ", startBeat: " + ofToString(startBeat)
+                    + ", startPlayingBeat: " + ofToString(startBeat)
                     + ", durationBeats: " + ofToString(durationBeats) + "}";
         }
 
@@ -321,8 +316,12 @@ namespace ofxBenG {
         generic_action(std::function<void()> action) : beat_action(), action(action) {
         }
 
-        virtual void startThisAction(float currentBeat) {
+        virtual void startThisAction() {
             action();
+        }
+
+        virtual void updateThisAction() {
+
         }
 
         virtual std::string getLabel() {
@@ -338,11 +337,15 @@ namespace ofxBenG {
         timeline() : beat_action() {
         };
 
-        virtual void startThisAction(float currentBeat) {
+        virtual void startThisAction() {
 
         }
 
-        virtual bool isThisActionDone(float currentBeat) {
+        virtual void updateThisAction() {
+
+        }
+
+        virtual bool isThisActionDone() {
             return false;
         }
 

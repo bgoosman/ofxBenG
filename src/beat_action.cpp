@@ -6,28 +6,29 @@ bool beat_action_comparator::operator()(beat_action *first, beat_action *second)
     return first->getTriggerBeat() > second->getTriggerBeat();
 }
 
+beat_action::beat_action() {}
+
+beat_action::~beat_action() {}
+
 void beat_action::update(float currentBeat) {
     this->currentBeat = currentBeat;
-    queueTriggeredActions(currentBeat);
-    updateRunningActions(currentBeat);
-    updateThisAction(currentBeat);
+    queueTriggeredActions();
+    updateRunningActions();
+    updateThisAction();
 }
 
 void beat_action::start(float currentBeat) {
+    this->currentBeat = currentBeat;
     std::cout << ofToString(currentBeat) << ": Starting " << this->getLabel() << std::endl;
-    queueTriggeredActions(currentBeat);
-    startThisAction(currentBeat);
+    queueTriggeredActions();
+    startThisAction();
 }
 
-void beat_action::updateThisAction(float currentBeat) {
-
-}
-
-bool beat_action::isThisActionDone(float currentBeat) {
+bool beat_action::isThisActionDone() {
     return true;
 }
 
-void beat_action::schedule(beat_action *action, float currentBeat, float beatsFromNow) {
+void beat_action::schedule(float beatsFromNow, beat_action *action) {
     float const scheduledBeat = currentBeat + beatsFromNow;
     std::cout << currentBeat << ": Scheduling " << action->getLabel() << " action at beat " << scheduledBeat
               << std::endl;
@@ -35,45 +36,41 @@ void beat_action::schedule(beat_action *action, float currentBeat, float beatsFr
     scheduledActions.push(action);
 }
 
-void beat_action::schedule(float currentBeat, float beatsFromNow, std::function<void()> action) {
-    schedule(new generic_action(action), currentBeat, beatsFromNow);
+void beat_action::schedule(float beatsFromNow, std::function<void()> action) {
+    schedule(beatsFromNow, new generic_action(action));
 }
 
 void beat_action::setTriggerBeat(float value) {
     this->triggerBeat = value;
 }
 
-bool beat_action::isTriggered(float currentBeat) {
-    return currentBeat >= triggerBeat;
-}
-
-bool beat_action::isDone(float currentBeat) {
-    return isScheduleDone() && isThisActionDone(currentBeat);
+bool beat_action::isDone() {
+    return isScheduleDone() && isThisActionDone();
 }
 
 bool beat_action::isScheduleDone() {
     return scheduledActions.size() == 0 && runningActions.size() == 0;
 }
 
-void beat_action::updateRunningActions(float currentBeat) {
+void beat_action::updateRunningActions() {
     for (auto it = runningActions.begin(); it != runningActions.end();) {
         beat_action *action = *it;
-        if (action->isDone(currentBeat)) {
+        action->update(currentBeat);
+        if (action->isDone()) {
             std::cout << currentBeat << " deleting action " << action->getLabel() << std::endl;
             it = this->runningActions.erase(it);
             delete action;
-        } else if (action != nullptr) {
-            action->update(currentBeat);
+        } else {
             it++;
         }
     }
 }
 
-void beat_action::queueTriggeredActions(float currentBeat) {
+void beat_action::queueTriggeredActions() {
     beat_action *nextAction;
     while (scheduledActions.size() > 0) {
         nextAction = scheduledActions.top();
-        if (nextAction->isTriggered(currentBeat)) {
+        if (currentBeat >= nextAction->getTriggerBeat()) {
             scheduledActions.pop();
             runningActions.push_back(nextAction);
             nextAction->start(currentBeat);
@@ -116,41 +113,38 @@ void flicker::draw(ofPoint windowSize) {
     }
 }
 
-void flicker::startThisAction(float currentBeat) {
+void flicker::startThisAction() {
+    startPlayingBeat = currentBeat + videoLengthBeats;
     stream->getWindow()->addView(this);
     buffer->resume();
 
-    float b = videoLengthBeats;
-    schedule(currentBeat, b, [this]() {
+    schedule(videoLengthBeats, [this]() {
         buffer->stop();
         isBlackout = true;
     });
 
-    b += blackoutLengthBeats;
-    startBeat = currentBeat + b;
-    schedule(currentBeat, b, [this]() {
+    schedule(videoLengthBeats + blackoutLengthBeats, [this]() {
         isBlackout = false;
         isPlaying = true;
         header->setup(*buffer);
     });
 
-    b += videoLengthBeats;
-    schedule(currentBeat, b, [this]() {
+    schedule(videoLengthBeats + blackoutLengthBeats + videoLengthBeats, [this]() {
         isPlaying = false;
         stream->getWindow()->removeView(this);
     });
 }
 
-void flicker::updateThisAction(float currentBeat) {
+void flicker::updateThisAction() {
     if (isPlaying) {
-        float amount = (currentBeat - startBeat) / videoLengthBeats;
+        float amount = (currentBeat - startPlayingBeat) / videoLengthBeats;
         float lerp = ofLerp(0, buffer->size(), amount);
         float frames = buffer->size() - lerp;
         header->setDelayFrames(frames);
     }
 }
 
-bool flicker::isThisActionDone(float currentBeat) {
+bool flicker::isThisActionDone() {
     return true;
 }
 
