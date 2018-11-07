@@ -6,16 +6,17 @@ bool beat_action_comparator::operator()(beat_action *first, beat_action *second)
     return first->getTriggerBeat() > second->getTriggerBeat();
 }
 
+void beat_action::update(float currentBeat) {
+    this->currentBeat = currentBeat;
+    queueTriggeredActions(currentBeat);
+    updateRunningActions(currentBeat);
+    updateThisAction(currentBeat);
+}
+
 void beat_action::start(float currentBeat) {
     std::cout << ofToString(currentBeat) << ": Starting " << this->getLabel() << std::endl;
     queueTriggeredActions(currentBeat);
     startThisAction(currentBeat);
-}
-
-void beat_action::update(float currentBeat) {
-    queueTriggeredActions(currentBeat);
-    updateRunningActions(currentBeat);
-    updateThisAction(currentBeat);
 }
 
 void beat_action::updateThisAction(float currentBeat) {
@@ -32,6 +33,10 @@ void beat_action::schedule(beat_action *action, float currentBeat, float beatsFr
               << std::endl;
     action->setTriggerBeat(scheduledBeat);
     scheduledActions.push(action);
+}
+
+void beat_action::schedule(float currentBeat, float beatsFromNow, std::function<void()> action) {
+    schedule(new generic_action(action), currentBeat, beatsFromNow);
 }
 
 void beat_action::setTriggerBeat(float value) {
@@ -83,51 +88,57 @@ float beat_action::getTriggerBeat() {
 }
 
 flicker::flicker(ofxBenG::video_stream *stream, float blackoutLengthBeats, float videoLengthBeats) :
-        stream(stream), blackoutLengthBeats(blackoutLengthBeats), videoLengthBeats(videoLengthBeats), isPlaying(false) {
+        stream(stream),
+        blackoutLengthBeats(blackoutLengthBeats),
+        videoLengthBeats(videoLengthBeats),
+        isPlaying(false),
+        isBlackout(false) {
     int const size = ofxBenG::utilities::beatsToSeconds(videoLengthBeats, 60) * 30;
     buffer = stream->makeBuffer(size);
-    buffer->stop();
     header = new ofxPm::VideoHeader;
-    headerView = new header_view(header);
-    flickerView = new flicker_view();
+    renderer = new ofxPm::BasicVideoRenderer;
+    renderer->setup(*header);
 }
 
 flicker::~flicker() {
-    delete flickerView;
-    delete headerView;
     delete header;
     delete buffer;
 }
 
+void flicker::draw(ofPoint windowSize) {
+    if (isBlackout) {
+        ofPushStyle();
+        ofSetColor(ofColor::black);
+        ofDrawRectangle(0, 0, windowSize[0], windowSize[1]);
+        ofPopStyle();
+    } else if (isPlaying) {
+        renderer->draw(0, 0, windowSize[0], windowSize[1]);
+    }
+}
+
 void flicker::startThisAction(float currentBeat) {
-    stream->getWindow()->addView(flickerView);
+    stream->getWindow()->addView(this);
+    buffer->resume();
 
-    float b = 0;
-    schedule(new generic_action([this]() {
-        buffer->resume();
-    }), currentBeat, b);
-
-    b += videoLengthBeats;
-    schedule(new generic_action([this]() {
+    float b = videoLengthBeats;
+    schedule(currentBeat, b, [this]() {
         buffer->stop();
-        flickerView->setBlackout(true);
-    }), currentBeat, b);
+        isBlackout = true;
+    });
 
     b += blackoutLengthBeats;
     startBeat = currentBeat + b;
-    schedule(new generic_action([this]() {
-        flickerView->setBlackout(false);
-        header->setup(*buffer);
+    schedule(currentBeat, b, [this]() {
+        isBlackout = false;
         isPlaying = true;
-        stream->getWindow()->addView(headerView);
-    }), currentBeat, b);
+        header->setup(*buffer);
+    });
 
     b += videoLengthBeats;
-    schedule(new generic_action([this]() {
-        stream->getWindow()->removeView(flickerView);
-        stream->getWindow()->removeView(headerView);
+    schedule(currentBeat, b, [this]() {
         isPlaying = false;
-    }), currentBeat, b);
+        stream->getWindow()->removeView(this);
+    });
 }
 
 void flicker::updateThisAction(float currentBeat) {
@@ -135,7 +146,6 @@ void flicker::updateThisAction(float currentBeat) {
         float amount = (currentBeat - startBeat) / videoLengthBeats;
         float lerp = ofLerp(0, buffer->size(), amount);
         float frames = buffer->size() - lerp;
-        std::cout << frames << std::endl;
         header->setDelayFrames(frames);
     }
 }

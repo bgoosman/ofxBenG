@@ -34,9 +34,10 @@ namespace ofxBenG {
         virtual void updateThisAction(float currentBeat);
         virtual bool isThisActionDone(float currentBeat);
         virtual float getTriggerBeat();
-        virtual void start(float currentBeat);
         virtual void update(float currentBeat);
+        virtual void start(float currentBeat);
         virtual void schedule(beat_action *action, float currentBeat, float beatsFromNow);
+        virtual void schedule(float currentBeat, float beatsFromNow, std::function<void()> action);
         virtual void setTriggerBeat(float value);
         virtual bool isTriggered(float currentBeat);
         virtual bool isDone(float currentBeat);
@@ -49,7 +50,7 @@ namespace ofxBenG {
         virtual void updateRunningActions(float currentBeat);
         virtual void queueTriggeredActions(float currentBeat);
         bool isScheduleDone();
-
+        float currentBeat;
         float triggerBeat;
     };
 
@@ -181,26 +182,26 @@ namespace ofxBenG {
         ofxPm::VideoHeader *header;
     };
 
-    class flicker : public beat_action {
+    class flicker : public beat_action, public window_view {
     public:
         flicker(ofxBenG::video_stream *stream, float blackoutLengthBeats, float videoLengthBeats);
         ~flicker();
+        virtual void draw(ofPoint windowSize);
         virtual void startThisAction(float currentBeat);
         virtual void updateThisAction(float currentBeat);
         virtual bool isThisActionDone(float currentBeat);
         virtual std::string getLabel();
 
     private:
-        ofxBenG::window *window;
         ofxBenG::video_stream *stream;
-        ofxBenG::flicker_view *flickerView;
-        ofxBenG::header_view *headerView;
         ofxPm::VideoBuffer *buffer;
         ofxPm::VideoHeader *header;
+        ofxPm::BasicVideoRenderer *renderer;
         float blackoutLengthBeats;
         float videoLengthBeats;
         float startBeat;
         bool isPlaying;
+        bool isBlackout;
     };
 
     class reverse_audio : public beat_action {
