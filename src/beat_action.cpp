@@ -121,12 +121,7 @@ void flicker::draw(ofPoint windowSize) {
 
 void flicker::startThisAction() {
     stream->getWindow()->addView(this);
-    isBlackout = true;
     buffer->resume();
-
-    schedule(blackoutLengthBeats, [this]() {
-        isBlackout = false;
-    });
 
     schedule(videoLengthBeats, [this]() {
         isBlackout = true;
@@ -146,6 +141,7 @@ void flicker::startThisAction() {
 
     schedule(videoLengthBeats + blackoutLengthBeats + videoLengthBeats, [this]() {
         isPlaying = false;
+        audio->playSample(sample);
         stream->getWindow()->removeView(this);
     });
 }
