@@ -39,6 +39,14 @@ void video_stream::draw() {
     }
 }
 
+float video_stream::getFps() {
+    if (buffers.size() > 0) {
+        return buffers[0]->getRealFPS();
+    } else {
+        return 0;
+    }
+}
+
 void video_stream::setWindow(ofxBenG::window *window) {
     this->screen = window;
 }

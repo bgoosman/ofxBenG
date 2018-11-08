@@ -10,7 +10,6 @@
 #include "ease.h"
 #include "maxim.h"
 #include "utilities.h"
-#include "flicker_view.h"
 
 namespace ofxBenG {
 
@@ -179,7 +178,7 @@ namespace ofxBenG {
 
     class flicker : public beat_action, public window_view {
     public:
-        flicker(ofxBenG::video_stream *stream, float blackoutLengthBeats, float videoLengthBeats);
+        flicker(ofxBenG::video_stream *stream, float blackoutLengthBeats, float videoLengthBeats, ofxBenG::audio *audio);
         ~flicker();
         virtual void draw(ofPoint windowSize);
         virtual void startThisAction();
@@ -188,13 +187,15 @@ namespace ofxBenG {
         virtual std::string getLabel();
 
     private:
+        ofxBenG::audio *audio;
+        ofxMaxiSample *sample;
         ofxBenG::video_stream *stream;
         ofxPm::VideoBuffer *buffer;
         ofxPm::VideoHeader *header;
         ofxPm::BasicVideoRenderer *renderer;
         float blackoutLengthBeats;
         float videoLengthBeats;
-        float startPlayingBeat;
+        float recordingFps;
         bool isPlaying;
         bool isBlackout;
     };

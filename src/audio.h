@@ -75,6 +75,14 @@ namespace ofxBenG {
             return volume;
         }
 
+        int getSampleRate() {
+            return rate;
+        }
+
+        int getBufferSize() {
+            return bufferSize;
+        }
+
         static const int channels = 2;
         static const int bufferSize = 512;
         static const int rate = 44100;

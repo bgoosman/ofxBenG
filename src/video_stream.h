@@ -16,6 +16,8 @@ namespace ofxBenG {
 
         void draw();
 
+        float getFps();
+
         void setWindow(ofxBenG::window *window);
 
         ofxBenG::window *getWindow();

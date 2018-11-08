@@ -6,9 +6,11 @@ bool beat_action_comparator::operator()(beat_action *first, beat_action *second)
     return first->getTriggerBeat() > second->getTriggerBeat();
 }
 
-beat_action::beat_action() {}
+beat_action::beat_action() {
+}
 
-beat_action::~beat_action() {}
+beat_action::~beat_action() {
+}
 
 void beat_action::update(float currentBeat) {
     this->currentBeat = currentBeat;
@@ -84,17 +86,21 @@ float beat_action::getTriggerBeat() {
     return triggerBeat;
 }
 
-flicker::flicker(ofxBenG::video_stream *stream, float blackoutLengthBeats, float videoLengthBeats) :
+flicker::flicker(ofxBenG::video_stream *stream, float blackoutLengthBeats, float videoLengthBeats, ofxBenG::audio *audio) :
         stream(stream),
         blackoutLengthBeats(blackoutLengthBeats),
         videoLengthBeats(videoLengthBeats),
         isPlaying(false),
-        isBlackout(false) {
-    int const size = ofxBenG::utilities::beatsToSeconds(videoLengthBeats, 60) * 30;
+        isBlackout(false),
+        audio(audio) {
+    recordingFps = stream->getFps();
+    int const size = ofxBenG::utilities::beatsToSeconds(videoLengthBeats, 60) * recordingFps;
     buffer = stream->makeBuffer(size);
     header = new ofxPm::VideoHeader;
     renderer = new ofxPm::BasicVideoRenderer;
     renderer->setup(*header);
+    sample = new ofxMaxiSample();
+    sample->load("/Users/admin/Dropbox/Audio/other samples/251814__zabuhailo__gasstovelektropod_click1_short.wav");
 }
 
 flicker::~flicker() {
@@ -114,19 +120,28 @@ void flicker::draw(ofPoint windowSize) {
 }
 
 void flicker::startThisAction() {
-    startPlayingBeat = currentBeat + videoLengthBeats;
     stream->getWindow()->addView(this);
+    isBlackout = true;
     buffer->resume();
 
+    schedule(blackoutLengthBeats, [this]() {
+        isBlackout = false;
+    });
+
     schedule(videoLengthBeats, [this]() {
-        buffer->stop();
         isBlackout = true;
+        audio->playSample(sample);
+        buffer->stop();
     });
 
     schedule(videoLengthBeats + blackoutLengthBeats, [this]() {
         isBlackout = false;
         isPlaying = true;
         header->setup(*buffer);
+        header->setFps(recordingFps);
+        header->setPlaying(true);
+        header->setLoopToStart();
+        header->setLoopMode(OF_LOOP_NONE);
     });
 
     schedule(videoLengthBeats + blackoutLengthBeats + videoLengthBeats, [this]() {
@@ -136,12 +151,6 @@ void flicker::startThisAction() {
 }
 
 void flicker::updateThisAction() {
-    if (isPlaying) {
-        float amount = (currentBeat - startPlayingBeat) / videoLengthBeats;
-        float lerp = ofLerp(0, buffer->size(), amount);
-        float frames = buffer->size() - lerp;
-        header->setDelayFrames(frames);
-    }
 }
 
 bool flicker::isThisActionDone() {
