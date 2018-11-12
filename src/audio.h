@@ -19,13 +19,12 @@ namespace ofxBenG {
 
     class audio {
     public:
-        audio() {
-            ofxMaxiSettings::setup(rate, channels, bufferSize);
+        static audio* getInstance() {
+            static audio instance;
+            return &instance;
         }
-        audio(int rate, int channels, int bufferSize) {
-            ofxMaxiSettings::setup(rate, channels, bufferSize);
-        }
-        ~audio() {}
+        audio(audio const&) = delete;
+        void operator=(audio const&) = delete;
 
         void playSample(ofxMaxiSample *sample) {
             sample->setPosition(0);
@@ -88,10 +87,22 @@ namespace ofxBenG {
         static const int rate = 44100;
 
     private:
+        audio() {
+            ofxMaxiSettings::setup(rate, channels, bufferSize);
+        }
+        audio(int rate, int channels, int bufferSize) {
+            ofxMaxiSettings::setup(rate, channels, bufferSize);
+        }
+        ~audio() {}
+
         std::vector<mix_t*> mixes;
         std::vector<ofxMaxiSample*> samples;
         ofxBenG::property<float> volume = {"volume", 0.75, 0.0, 1.0};
     };
+
+    audio* audio() {
+        return audio::getInstance();
+    }
 };
 
 #endif

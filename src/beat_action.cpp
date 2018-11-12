@@ -1,4 +1,5 @@
 #include "beat_action.h"
+#include "ofApp.h"
 
 using namespace ofxBenG;
 
@@ -12,16 +13,14 @@ beat_action::beat_action() {
 beat_action::~beat_action() {
 }
 
-void beat_action::update(float currentBeat) {
-    this->currentBeat = currentBeat;
+void beat_action::update() {
     queueTriggeredActions();
     updateRunningActions();
     updateThisAction();
 }
 
-void beat_action::start(float currentBeat) {
-    this->currentBeat = currentBeat;
-    std::cout << ofToString(currentBeat) << ": Starting " << this->getLabel() << std::endl;
+void beat_action::start() {
+//    std::cout << ofToString(currentBeat) << ": Starting " << this->getLabel() << std::endl;
     queueTriggeredActions();
     startThisAction();
 }
@@ -30,16 +29,24 @@ bool beat_action::isThisActionDone() {
     return true;
 }
 
-void beat_action::schedule(float beatsFromNow, beat_action *action) {
-    float const scheduledBeat = currentBeat + beatsFromNow;
-    std::cout << currentBeat << ": Scheduling " << action->getLabel() << " action at beat " << scheduledBeat
-              << std::endl;
+void beat_action::schedule(float baseBeat, float beatsFromBase, beat_action *action) {
+    float const scheduledBeat = baseBeat + beatsFromBase;
+//    std::cout << currentBeat << ": Scheduling " << action->getLabel() << " action at beat " << scheduledBeat
+//              << std::endl;
     action->setTriggerBeat(scheduledBeat);
     scheduledActions.push(action);
 }
 
+void beat_action::schedule(float beatsFromNow, beat_action *action) {
+    schedule(ofxBenG::ableton::getInstance()->getBeat(), beatsFromNow, action);
+}
+
 void beat_action::schedule(float beatsFromNow, std::function<void()> action) {
     schedule(beatsFromNow, new generic_action(action));
+}
+
+void beat_action::scheduleNextWholeBeat(beat_action *action) {
+    schedule(ofxBenG::ableton::getInstance()->getNextWholeBeat(), 0, action);
 }
 
 void beat_action::setTriggerBeat(float value) {
@@ -57,9 +64,9 @@ bool beat_action::isScheduleDone() {
 void beat_action::updateRunningActions() {
     for (auto it = runningActions.begin(); it != runningActions.end();) {
         beat_action *action = *it;
-        action->update(currentBeat);
+        action->update();
         if (action->isDone()) {
-            std::cout << currentBeat << " deleting action " << action->getLabel() << std::endl;
+//            std::cout << ofxBenG::ableton::getInstance()->getBeat() << " deleting action " << action->getLabel() << std::endl;
             it = this->runningActions.erase(it);
             delete action;
         } else {
@@ -72,10 +79,10 @@ void beat_action::queueTriggeredActions() {
     beat_action *nextAction;
     while (scheduledActions.size() > 0) {
         nextAction = scheduledActions.top();
-        if (currentBeat >= nextAction->getTriggerBeat()) {
+        if (ofxBenG::ableton::getInstance()->getBeat() >= nextAction->getTriggerBeat()) {
             scheduledActions.pop();
             runningActions.push_back(nextAction);
-            nextAction->start(currentBeat);
+            nextAction->start();
         } else {
             break;
         }
@@ -86,21 +93,20 @@ float beat_action::getTriggerBeat() {
     return triggerBeat;
 }
 
-flicker::flicker(ofxBenG::video_stream *stream, float blackoutLengthBeats, float videoLengthBeats, ofxBenG::audio *audio) :
+flicker::flicker(ofxBenG::video_stream *stream,
+        float blackoutLengthBeats,
+        float videoLengthBeats) :
         stream(stream),
         blackoutLengthBeats(blackoutLengthBeats),
         videoLengthBeats(videoLengthBeats),
         isPlaying(false),
-        isBlackout(false),
-        audio(audio) {
+        isBlackout(false) {
     recordingFps = stream->getFps();
-    int const size = ofxBenG::utilities::beatsToSeconds(videoLengthBeats, 60) * recordingFps;
+    int const size = ofxBenG::utilities::beatsToSeconds(videoLengthBeats, ofxBenG::ableton::getInstance()->getTempo()) * recordingFps;
     buffer = stream->makeBuffer(size);
     header = new ofxPm::VideoHeader;
     renderer = new ofxPm::BasicVideoRenderer;
     renderer->setup(*header);
-    sample = new ofxMaxiSample();
-    sample->load("/Users/admin/Dropbox/Audio/other samples/251814__zabuhailo__gasstovelektropod_click1_short.wav");
 }
 
 flicker::~flicker() {
@@ -120,16 +126,19 @@ void flicker::draw(ofPoint windowSize) {
 }
 
 void flicker::startThisAction() {
+    std::cout << ofxBenG::ableton::getInstance()->getBeat() << ": Start recording flicker" << std::endl;
     stream->getWindow()->addView(this);
     buffer->resume();
 
-    schedule(videoLengthBeats, [this]() {
+    float acc = videoLengthBeats;
+    schedule(acc, [this]() {
         isBlackout = true;
-        audio->playSample(sample);
         buffer->stop();
     });
 
-    schedule(videoLengthBeats + blackoutLengthBeats, [this]() {
+    acc += blackoutLengthBeats;
+    schedule(acc, [this]() {
+        std::cout << ofxBenG::ableton::getInstance()->getBeat() << ": Start playing flicker" << std::endl;
         isBlackout = false;
         isPlaying = true;
         header->setup(*buffer);
@@ -139,9 +148,15 @@ void flicker::startThisAction() {
         header->setLoopMode(OF_LOOP_NONE);
     });
 
-    schedule(videoLengthBeats + blackoutLengthBeats + videoLengthBeats, [this]() {
+    acc += videoLengthBeats;
+    schedule(acc, [this]() {
         isPlaying = false;
-        audio->playSample(sample);
+        isBlackout = true;
+    });
+
+    acc += blackoutLengthBeats;
+    schedule(acc, [this]() {
+        isBlackout = false;
         stream->getWindow()->removeView(this);
     });
 }

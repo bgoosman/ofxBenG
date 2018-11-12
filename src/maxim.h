@@ -55,23 +55,23 @@ namespace ofxBenG {
 
     class maxim_reverse {
     public:
-        maxim_reverse(ofxBenG::audio* audio, ofxMaxiSample* forwardSample, ofxMaxiSample* backwardSample, float lengthSeconds)
-                : audio(audio), forwardSample(forwardSample), backwardSample(backwardSample), lengthSeconds(lengthSeconds) {
+        maxim_reverse(ofxMaxiSample* forwardSample, ofxMaxiSample* backwardSample, float lengthSeconds)
+                : forwardSample(forwardSample), backwardSample(backwardSample), lengthSeconds(lengthSeconds) {
             backwardSample->setPosition(1 - forwardSample->getPosition());
             forwardSample->setPositionSeconds(forwardSample->getPositionSeconds() - lengthSeconds);
             targetSeconds = backwardSample->getPositionSeconds() + lengthSeconds;
-            audio->setSample(backwardSample);
+            ofxBenG::audio::getInstance()->setSample(backwardSample);
             std::cout << "reverse, seconds=" << lengthSeconds << std::endl;
         }
 
         ~maxim_reverse() {
             std::cout << "reverse, set current sample = forwardSample" << std::endl;
-            audio->setSample(forwardSample);
+            ofxBenG::audio::getInstance()->setSample(forwardSample);
         }
 
-        static maxim_reverse* make_random(ofxBenG::audio* audio, ofxMaxiSample* forwardSample, ofxMaxiSample* backwardSample) {
+        static maxim_reverse* make_random(ofxMaxiSample* forwardSample, ofxMaxiSample* backwardSample) {
             float lengthSeconds = ofRandom(5);
-            return new maxim_reverse(audio, forwardSample, backwardSample, lengthSeconds);
+            return new maxim_reverse(forwardSample, backwardSample, lengthSeconds);
         }
 
         bool isDone() {
@@ -85,7 +85,6 @@ namespace ofxBenG {
         ofxMaxiSample* backwardSample;
         float lengthSeconds;
         float targetSeconds;
-        ofxBenG::audio* audio;
     };
 };
 
