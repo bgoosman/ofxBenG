@@ -1,5 +1,4 @@
 #include "beat_action.h"
-#include "ofApp.h"
 
 using namespace ofxBenG;
 
@@ -45,8 +44,19 @@ void beat_action::schedule(float beatsFromNow, std::function<void()> action) {
     schedule(beatsFromNow, new generic_action(action));
 }
 
+void beat_action::schedule(int wholeBeatsFromNow, beat_action *action) {
+    float beat = floor(ofxBenG::ableton::getInstance()->getBeat() + wholeBeatsFromNow);
+    schedule(beat, 0, action);
+}
+
 void beat_action::scheduleNextWholeBeat(beat_action *action) {
     schedule(ofxBenG::ableton::getInstance()->getNextWholeBeat(), 0, action);
+}
+
+void beat_action::scheduleNextWholeMeasure(beat_action *action) {
+    float beat = ofxBenG::ableton::getInstance()->getBeat();
+    while (int(floor(beat)) % 4 != 0) beat += 1;
+    schedule(floor(beat), 0, action);
 }
 
 void beat_action::setTriggerBeat(float value) {

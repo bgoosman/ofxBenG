@@ -6,10 +6,13 @@
 #include <queue>
 #include "ofxPlaymodes.h"
 #include "audio.h"
-#include "beat_action.h"
 #include "ease.h"
 #include "maxim.h"
 #include "utilities.h"
+#include "ableton.h"
+#include "window.h"
+#include "window_view.h"
+#include "video_stream.h"
 
 namespace ofxBenG {
 
@@ -31,7 +34,9 @@ namespace ofxBenG {
         virtual void schedule(float baseBeat, float beatsFromBase, beat_action *action);
         virtual void schedule(float beatsFromNow, beat_action *action);
         virtual void schedule(float beatsFromNow, std::function<void()> action);
+        virtual void schedule(int wholeBeatsFromNow, beat_action *action);
         virtual void scheduleNextWholeBeat(beat_action *action);
+        virtual void scheduleNextWholeMeasure(beat_action *action);
         virtual void start();
         virtual void update();
         virtual float getTriggerBeat();

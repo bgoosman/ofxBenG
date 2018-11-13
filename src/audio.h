@@ -28,7 +28,8 @@ namespace ofxBenG {
 
         void playSample(ofxMaxiSample *sample) {
             sample->setPosition(0);
-            samples.push_back(sample);
+            if (!isSamplePlaying(sample))
+                samples.push_back(sample);
         }
 
         void setSample(ofxMaxiSample *s) {
@@ -41,6 +42,13 @@ namespace ofxBenG {
 
         void remove(mix_t* mix) {
             mixes.erase(std::remove(mixes.begin(), mixes.end(), mix), mixes.end());
+        }
+
+        bool isSamplePlaying(ofxMaxiSample *sample) {
+            for (auto it : samples) {
+                if (it == sample) return true;
+            }
+            return false;
         }
 
         float getMix() {
@@ -99,10 +107,6 @@ namespace ofxBenG {
         std::vector<ofxMaxiSample*> samples;
         ofxBenG::property<float> volume = {"volume", 0.75, 0.0, 1.0};
     };
-
-    audio* audio() {
-        return audio::getInstance();
-    }
 };
 
 #endif
