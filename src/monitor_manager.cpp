@@ -4,7 +4,7 @@
 using namespace ofxBenG;
 
 monitor_manager::monitor_manager() {
-//    excludedMonitors.push_back("Color LCD");
+    excludedMonitors.push_back("Color LCD");
 }
 
 void monitor_manager::update() {

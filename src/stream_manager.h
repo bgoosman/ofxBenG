@@ -128,8 +128,15 @@ namespace ofxBenG {
         }
 
         std::vector<ofVideoDevice> getVideoDevices() {
-            static auto grabber = new ofxPm::VideoGrabber();
-            return grabber->listDevices();
+            auto grabber = new ofxPm::VideoGrabber();
+            auto videoDevices = grabber->listDevices();
+            auto ps3EyeGrabber = std::make_shared<ofxPS3EyeGrabber>();
+            auto ps3EyeDevices = ps3EyeGrabber->listDevices();
+            for (auto device : ps3EyeDevices) {
+                videoDevices.push_back(device);
+            }
+            delete grabber;
+            return videoDevices;
         }
 
         bool isStreamActive(ofVideoDevice &device) {
@@ -148,7 +155,9 @@ namespace ofxBenG {
         }
 
         void addVideoStream(ofVideoDevice &device) {
-            if (device.deviceName != "FaceTime HD Camera") {
+            if (device.deviceName == "PS3-Eye") {
+                addPs3Eye();
+            } else if (device.deviceName != "FaceTime HD Camera") {
                 int width = defaultWidth;
                 int height = defaultHeight;
                 std::cout << "Adding video stream at (" << width << ", " << height << ")" << std::endl;
@@ -169,8 +178,8 @@ namespace ofxBenG {
             int fps = 60;
             auto grabber = new ofxPm::VideoGrabber();
             grabber->setGrabber(std::make_shared<ofxPS3EyeGrabber>());
-            grabber->setup(videoWidth, videoHeight);
-            grabber->initGrabber(videoWidth, videoHeight);
+            grabber->setDesiredFrameRate(fps);
+            grabber->initGrabberWithUpdate(videoWidth, videoHeight);
             grabber->update();
             auto stream = new video_stream(ofxBenG::stream_manager::ps3eye, grabber, defaultBufferSize);
             streams.push_back(stream);

@@ -2,7 +2,7 @@
 #define monitor_h
 
 #include "ofMain.h"
-#include "GL/glew.h"
+#include "GLFW/glfw3.h"
 
 namespace ofxBenG {
 

@@ -1,8 +1,8 @@
 #ifndef monitor_manager_h
 #define monitor_manager_h
 
-#include <ofEvent.h>
-#include <ofEventUtils.h>
+#include "ofConstants.h"
+#include "ofEvent.h"
 #include "GL/glew.h"
 #include <GLFW/glfw3.h>
 
