@@ -40,3 +40,7 @@ ofPoint monitor::getPosition() {
 std::string monitor::toString() {
     return name;
 }
+
+std::string monitor::getName() {
+    return name;
+}

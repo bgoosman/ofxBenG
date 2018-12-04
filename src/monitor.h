@@ -27,6 +27,8 @@ namespace ofxBenG {
 
         std::string toString();
 
+        std::string getName();
+
     private:
         GLFWmonitor *glfwMonitor;
         ofxBenG::window *myScreen;

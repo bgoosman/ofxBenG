@@ -68,6 +68,7 @@ namespace ofxBenG {
         }
 
         video_stream *getStream(int index) {
+            if (index >= streams.size()) return nullptr;
             return streams[index];
         }
 

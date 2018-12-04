@@ -26,8 +26,8 @@ void monitor_manager::addNew(GLFWmonitor **glfwMonitors, int count) {
         GLFWmonitor *glfwMonitor = glfwMonitors[i];
         std::string name = glfwGetMonitorName(glfwMonitor);
         if (!isMonitorExcluded(name)) {
-            if (std::find_if(monitors.begin(), monitors.end(), [glfwMonitor](ofxBenG::monitor *monitor) {
-                return monitor->getGlfwMonitor() == glfwMonitor;
+            if (std::find_if(monitors.begin(), monitors.end(), [glfwMonitor, name](ofxBenG::monitor *monitor) {
+                return monitor->getName() == name;
             }) == monitors.end()) {
                 auto monitor = new ofxBenG::monitor(glfwMonitor, this, i);
                 monitors.push_back(monitor);

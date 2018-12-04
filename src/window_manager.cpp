@@ -20,3 +20,7 @@ ofxBenG::window *window_manager::getWindowWithNoStream() {
     }
     return nullptr;
 }
+
+std::vector<ofxBenG::window*> window_manager::getWindows() {
+    return windows;
+}

@@ -14,6 +14,8 @@ namespace ofxBenG {
 
         ofxBenG::window *getWindowWithNoStream();
 
+        std::vector<ofxBenG::window *> getWindows();
+
     private:
         std::vector<ofxBenG::window *> windows;
     };

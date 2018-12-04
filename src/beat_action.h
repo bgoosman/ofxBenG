@@ -338,7 +338,7 @@ namespace ofxBenG {
 
     class timeline : public beat_action {
     public:
-        timeline() : beat_action() {
+        timeline(float measureLength) : beat_action(), measureLength(measureLength) {
         };
 
         virtual void startThisAction() {
@@ -356,6 +356,9 @@ namespace ofxBenG {
         virtual std::string getLabel() {
             return "Timeline";
         }
+
+    private:
+        float measureLength;
     };
 };
 

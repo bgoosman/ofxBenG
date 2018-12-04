@@ -4,6 +4,8 @@
 #include <cmath>
 #include "ofxAbletonLink.h"
 #include "utilities.h"
+#include "ofxAbletonLiveTrack.h"
+#include "ofxAbletonLive.h"
 
 namespace ofxBenG {
 
@@ -17,9 +19,14 @@ namespace ofxBenG {
         ableton(ableton const &) = delete;
         void operator=(ableton const &) = delete;
 
-        void setupLink(double beatsPerMinute, double quantum) {
+        void setup(double beatsPerMinute, double quantum) {
             link.setup(beatsPerMinute);
             link.setQuantum(quantum);
+            live.setup();
+        }
+
+        void update() {
+            live.update();
         }
 
         float getTempo() {
@@ -91,15 +98,32 @@ namespace ofxBenG {
             return ofxBenG::utilities::closeToInteger(getBeat());
         }
 
+        void stopAll() {
+            live.stop();
+        }
+
+        void playClip(std::string trackName, std::string clipName) {
+            ofxAbletonLiveTrack *track = live.getTrack(trackName);
+            ofxAbletonLiveClip *clip = track->getClip(clipName);
+            clip->play();
+        }
+
+        void stopClip(std::string trackName, std::string clipName) {
+            ofxAbletonLiveTrack *track = live.getTrack(trackName);
+            ofxAbletonLiveClip *clip = track->getClip(clipName);
+            clip->stop();
+        }
+
     private:
         ableton() {
         }
 
         ofxAbletonLink link;
+        ofxAbletonLive live;
         float startBeat = 0.0;
     };
 
-    static ableton* ableton() {
+    static ableton *ableton() {
         return ableton::getInstance();
     }
 } // ofxBenG
