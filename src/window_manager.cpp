@@ -21,6 +21,15 @@ ofxBenG::window *window_manager::getWindowWithNoStream() {
     return nullptr;
 }
 
+ofxBenG::window *window_manager::getWindowForMonitor(std::string monitor) {
+    for (auto window : windows) {
+        if (window->getMonitorName().find(monitor) != std::string::npos) {
+            return window;
+        }
+    }
+    return nullptr;
+}
+
 std::vector<ofxBenG::window*> window_manager::getWindows() {
     return windows;
 }

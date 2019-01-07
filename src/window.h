@@ -26,6 +26,10 @@ namespace ofxBenG {
 
         void removeView(ofxBenG::window_view *view);
 
+        std::string getMonitorName();
+
+        ofxBenG::monitor *getMonitor();
+
         void setMonitor(ofxBenG::monitor *monitor);
 
         void setStream(ofxBenG::video_stream *stream);

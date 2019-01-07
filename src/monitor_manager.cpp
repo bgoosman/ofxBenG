@@ -4,11 +4,14 @@
 using namespace ofxBenG;
 
 monitor_manager::monitor_manager() {
-    excludedMonitors.push_back("Color LCD");
 }
 
 void monitor_manager::update() {
     refreshList();
+}
+
+void monitor_manager::excludeMonitor(std::string monitorName) {
+    excludedMonitors.push_back(monitorName);
 }
 
 void monitor_manager::refreshList() {

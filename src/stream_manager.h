@@ -100,6 +100,10 @@ namespace ofxBenG {
             delete streams[i];
         }
 
+        void excludeDevice(std::string deviceName) {
+            excludedDevices.push_back(deviceName);
+        }
+
         std::map<ofxPm::VideoFormat, std::vector<ofPtr<ofxPm::VideoFrame::Obj>>> *pool; // do not delete
         ofEvent<video_stream> onVideoStreamAdded;
         ofEvent<video_stream> onVideoStreamRemoved;
@@ -110,7 +114,7 @@ namespace ofxBenG {
 
             // Add new video streams
             for (auto device : videoDevices) {
-                if (!isStreamActive(device)) {
+                if (!isStreamActive(device) && !isDeviceExcluded(device.deviceName)) {
                     addVideoStream(device);
                 }
             }
@@ -235,6 +239,16 @@ namespace ofxBenG {
             }
         }
 
+        bool isDeviceExcluded(std::string deviceName) {
+            for (auto device : excludedDevices) {
+                if (deviceName.find(device) != std::string::npos) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        std::vector<std::string> excludedDevices;
         std::vector<ofxBenG::video_stream *> streams;
         int defaultBufferSize;
         int defaultWidth;

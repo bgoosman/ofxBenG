@@ -104,14 +104,22 @@ namespace ofxBenG {
 
         void playClip(std::string trackName, std::string clipName) {
             ofxAbletonLiveTrack *track = live.getTrack(trackName);
-            ofxAbletonLiveClip *clip = track->getClip(clipName);
-            clip->play();
+            if (track != NULL) {
+                ofxAbletonLiveClip *clip = track->getClip(clipName);
+                if (clip != NULL) {
+                    clip->play();
+                }
+            }
         }
 
         void stopClip(std::string trackName, std::string clipName) {
             ofxAbletonLiveTrack *track = live.getTrack(trackName);
-            ofxAbletonLiveClip *clip = track->getClip(clipName);
-            clip->stop();
+            if (track != NULL) {
+                ofxAbletonLiveClip *clip = track->getClip(clipName);
+                if (clip != NULL) {
+                    clip->stop();
+                }
+            }
         }
 
     private:

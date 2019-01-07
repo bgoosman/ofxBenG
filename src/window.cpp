@@ -51,7 +51,7 @@ void window::removeView(ofxBenG::window_view *view) {
 void window::setStream(ofxBenG::video_stream* stream) {
     if (stream != nullptr) {
         this->stream = stream;
-        std::cout << "Setting " << this->stream->getDeviceName() << " to window." << std::endl;
+        std::cout << "Setting " << this->stream->getDeviceName() << " to window of " << this->getMonitorName() << std::endl;
         int newBuffer = this->stream->addBuffer();
         this->stream->recordInto(newBuffer);
         header = stream->makeHeader(newBuffer);
@@ -62,6 +62,14 @@ void window::setStream(ofxBenG::video_stream* stream) {
 
 void window::setBlackout(bool enabled) {
     isBlackout = enabled;
+}
+
+std::string window::getMonitorName() {
+    return monitor->getName();
+}
+
+ofxBenG::monitor *window::getMonitor() {
+    return monitor;
 }
 
 void window::setMonitor(ofxBenG::monitor *monitor) {
