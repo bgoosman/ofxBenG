@@ -14,6 +14,10 @@ void monitor_manager::excludeMonitor(std::string monitorName) {
     excludedMonitors.push_back(monitorName);
 }
 
+std::vector<ofxBenG::monitor *> monitor_manager::getMonitors() {
+    return monitors;
+}
+
 void monitor_manager::refreshList() {
     int count;
     GLFWmonitor **glfwMonitors = glfwGetMonitors(&count);

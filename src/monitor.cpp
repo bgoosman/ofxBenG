@@ -7,12 +7,12 @@ using namespace ofxBenG;
 monitor::monitor(GLFWmonitor *glfwMonitor, ofxBenG::monitor_manager* monitorManager, int id) : glfwMonitor(glfwMonitor), monitorManager(monitorManager), id(id) {
     name = glfwGetMonitorName(glfwMonitor);
     size = ofPoint(0, 0);
-    myScreen = nullptr;
+    myWindow = nullptr;
 }
 
 monitor::~monitor() {
-    delete myScreen;
-    myScreen = nullptr;
+    delete myWindow;
+    myWindow = nullptr;
     glfwMonitor = NULL;
 }
 
@@ -21,6 +21,10 @@ void monitor::update() {
 
 int monitor::getId() {
     return id;
+}
+
+ofxBenG::window *monitor::getWindow() {
+    return myWindow;
 }
 
 GLFWmonitor* monitor::getGlfwMonitor() {

@@ -3,8 +3,8 @@
 
 using namespace ofxBenG;
 
-window::window(std::shared_ptr<ofAppBaseWindow> parentWindow)
-        : parentWindow(parentWindow) {
+window::window(std::shared_ptr<ofAppBaseWindow> parentWindow, bool startFullscreen)
+        : parentWindow(parentWindow), startFullscreen(startFullscreen) {
     renderer = nullptr;
     header = nullptr;
     monitor = nullptr;
@@ -52,9 +52,7 @@ void window::setStream(ofxBenG::video_stream* stream) {
     if (stream != nullptr) {
         this->stream = stream;
         std::cout << "Setting " << this->stream->getDeviceName() << " to window of " << this->getMonitorName() << std::endl;
-        int newBuffer = this->stream->addBuffer();
-        this->stream->recordInto(newBuffer);
-        header = stream->makeHeader(newBuffer);
+        header = stream->makeHeader(0);
         this->addView(new header_view(header));
         this->stream->setWindow(this);
     }
@@ -89,7 +87,7 @@ void window::setMonitor(ofxBenG::monitor *monitor) {
     ofAddListener(myWindow->events().exit, this, &window::exit);
     ofPoint p = monitor->getPosition();
     this->setWindowPosition(p[0], p[1]);
-    this->setFullscreen(true);
+    this->setFullscreen(startFullscreen);
 }
 
 void window::setWindowPosition(int x, int y) {
@@ -101,7 +99,7 @@ void window::setWindowShape(int w, int h) {
 }
 
 void window::setFullscreen(bool enabled) {
-    myWindow->setFullscreen(true);
+    myWindow->setFullscreen(enabled);
 }
 
 video_stream *window::getStream() {

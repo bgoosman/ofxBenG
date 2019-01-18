@@ -162,7 +162,7 @@ namespace ofxBenG {
         void addVideoStream(ofVideoDevice &device) {
             if (device.deviceName == "PS3-Eye") {
                 addPs3Eye();
-            } else if (device.deviceName != "FaceTime HD Camera") {
+            } else {
                 int width = defaultWidth;
                 int height = defaultHeight;
                 std::cout << "Adding video stream at (" << width << ", " << height << ")" << std::endl;

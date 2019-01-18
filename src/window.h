@@ -12,7 +12,7 @@ namespace ofxBenG {
 
     class window {
     public:
-        window(std::shared_ptr<ofAppBaseWindow> parentWindow);
+        window(std::shared_ptr<ofAppBaseWindow> parentWindow, bool startFullscreen);
 
         ~window();
 
@@ -54,6 +54,7 @@ namespace ofxBenG {
         std::vector<ofxBenG::window_view *> views;
         bool isClosing = false;
         bool isBlackout = false;
+        bool startFullscreen = false;
     };
 }
 

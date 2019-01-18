@@ -18,3 +18,7 @@ header_view::~header_view() {
 void header_view::draw(ofPoint windowSize) {
     renderer->draw(0, 0, windowSize[0], windowSize[1]);
 }
+
+void header_view::draw(float x, float y, float w, float h) {
+    renderer->draw(x, y, w, h);
+}

@@ -17,7 +17,7 @@ namespace ofxBenG {
 
         int getId();
 
-        ofxBenG::window *getScreen();
+        ofxBenG::window *getWindow();
 
         GLFWmonitor *getGlfwMonitor();
 
@@ -31,7 +31,7 @@ namespace ofxBenG {
 
     private:
         GLFWmonitor *glfwMonitor;
-        ofxBenG::window *myScreen;
+        ofxBenG::window *myWindow;
         ofxBenG::monitor_manager *monitorManager;
         std::string name;
         ofPoint size;

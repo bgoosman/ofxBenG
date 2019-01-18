@@ -13,6 +13,7 @@
 #include "window.h"
 #include "window_view.h"
 #include "video_stream.h"
+#include "etc_element.h"
 
 namespace ofxBenG {
 
@@ -28,13 +29,15 @@ namespace ofxBenG {
         beat_action();
         virtual ~beat_action();
         virtual std::string getLabel() = 0;
+        virtual void executeAction(beat_action *action);
         virtual void startThisAction() = 0;
         virtual void updateThisAction() = 0;
         virtual bool isThisActionDone();
+        virtual void clearScheduledActions();
         virtual void schedule(float baseBeat, float beatsFromBase, beat_action *action);
         virtual void schedule(float beatsFromNow, beat_action *action);
         virtual void schedule(float beatsFromNow, std::function<void()> action);
-        virtual void schedule(int wholeBeatsFromNow, beat_action *action);
+        virtual void scheduleOnNthBeatFromNow(int wholeBeatsFromNow, beat_action *action);
         virtual void scheduleNextWholeBeat(beat_action *action);
         virtual void scheduleNextWholeMeasure(beat_action *action);
         virtual void start();
@@ -52,6 +55,47 @@ namespace ofxBenG {
         virtual void queueTriggeredActions();
         bool isScheduleDone();
         float triggerBeat;
+    };
+
+    class lfo_action : public beat_action {
+    public:
+        lfo_action(float frequency, float startY, bool isHolding);
+        virtual void startThisAction();
+        virtual void updateThisAction();
+        virtual bool isThisActionDone();
+        virtual std::string getLabel();
+        float map(float lfoValue, float targetMin, float targetMax);
+        void setFrequency(float value);
+        void setHolding(bool value);
+
+        ofEvent<float> onLfoValue;
+    private:
+        float beatsToRadian(float beat);
+
+        float frequency;
+        float phase;
+        float startY;
+        bool isHolding = false;
+    };
+
+    /* Linearly transition from 0 to 1 in a duration of seconds */
+    typedef std::function<void(float, float, float)> floatFunction;
+    class lerp_action : public beat_action {
+    public:
+        lerp_action(float durationBeats, floatFunction onValue);
+        virtual void startThisAction();
+        virtual void updateThisAction();
+        virtual bool isThisActionDone();
+        virtual std::string getLabel();
+        float map(float value, float targetMin, float targetMax);
+
+    private:
+        float durationBeats;
+        float const myMin = 0;
+        float const myMax = 1;
+        float startBeat;
+        float endBeat;
+        floatFunction onValue;
     };
 
     class record_action : public beat_action {
@@ -186,24 +230,41 @@ namespace ofxBenG {
     public:
         flicker(ofxBenG::video_stream *stream,
                 float blackoutLengthBeats,
-                float videoLengthBeats);
+                float videoLengthBeats,
+                ofxBenG::etc_element *lightBoard,
+                float faderNumber,
+                float lightLevelMin,
+                float lightLevelMax,
+                ofxBenG::flicker *lastFlicker);
         ~flicker();
         virtual void draw(ofPoint windowSize);
         virtual void startThisAction();
         virtual void updateThisAction();
         virtual bool isThisActionDone();
         virtual std::string getLabel();
+        ofxPm::VideoHeader *getHeader();
+        float getVideoLengthBeats();
 
     private:
+        ofxBenG::lerp_action *fade(float start, float end);
+
+        ofxBenG::lerp_action *lerp;
         ofxBenG::video_stream *stream;
         ofxPm::VideoBuffer *buffer;
         ofxPm::VideoHeader *header;
         ofxPm::BasicVideoRenderer *renderer;
+        ofTexture *holdFrame;
+        ofxBenG::etc_element *lightBoard;
+        ofxBenG::flicker *lastFlicker;
         float blackoutLengthBeats;
         float videoLengthBeats;
         float recordingFps;
+        float faderNumber;
+        float lightLevelMin;
+        float lightLevelMax;
         bool isPlaying;
         bool isBlackout;
+        bool isHoldingFrame;
     };
 
     class reverse_audio : public beat_action {

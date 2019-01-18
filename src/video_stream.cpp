@@ -10,6 +10,8 @@ video_stream::video_stream(std::string deviceName, ofxPm::VideoGrabber *grabber,
           defaultBufferSize(defaultBufferSize),
           currentlyRecording(nullptr) {
     screen = nullptr;
+    auto defaultBuffer = addBuffer();
+    recordInto(defaultBuffer);
 }
 
 video_stream::~video_stream() {

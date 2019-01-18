@@ -16,6 +16,7 @@ namespace ofxBenG {
         header_view(ofxPm::VideoHeader *header);
         ~header_view();
         void draw(ofPoint windowSize);
+        void draw(float x, float y, float w, float h);
 
     private:
         ofxPm::BasicVideoRenderer *renderer;

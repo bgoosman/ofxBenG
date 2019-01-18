@@ -102,6 +102,30 @@ namespace ofxBenG {
             live.stop();
         }
 
+        ofxAbletonLiveTrack *getTrack(std::string trackName) {
+            return live.getTrack(trackName);
+        }
+
+        ofxAbletonLiveClip *getClip(std::string trackName, std::string clipName) {
+            auto track = getTrack(trackName);
+            if (track != NULL) {
+                return track->getClip(clipName);
+            } else {
+                return NULL;
+            }
+        }
+
+        bool isClipPresent(std::string trackName, std::string clipName) {
+            ofxAbletonLiveTrack *track = live.getTrack(trackName);
+            if (track != NULL) {
+                ofxAbletonLiveClip *clip = track->getClip(clipName);
+                if (clip != NULL) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         void playClip(std::string trackName, std::string clipName) {
             ofxAbletonLiveTrack *track = live.getTrack(trackName);
             if (track != NULL) {
@@ -120,6 +144,10 @@ namespace ofxBenG {
                     clip->stop();
                 }
             }
+        }
+
+        std::size_t getNumPeers() {
+            return link.numPeers();
         }
 
     private:

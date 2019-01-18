@@ -18,8 +18,14 @@ namespace ofxBenG {
 
         std::vector<ofxBenG::window *> getWindows();
 
+        bool getFullscreen();
+
+        void setFullscreen(bool);
+
     private:
         std::vector<ofxBenG::window *> windows;
+
+        bool isFullscreen = true;
     };
 }
 

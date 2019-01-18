@@ -17,6 +17,8 @@ namespace ofxBenG {
 
         void excludeMonitor(std::string);
 
+        std::vector<ofxBenG::monitor *> getMonitors();
+
         ofEvent<ofxBenG::monitor> onMonitorAdded;
         ofEvent<ofxBenG::monitor> onMonitorRemoved;
 

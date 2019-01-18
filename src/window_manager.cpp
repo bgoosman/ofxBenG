@@ -7,7 +7,7 @@
 using namespace ofxBenG;
 
 ofxBenG::window *window_manager::makeWindow(std::shared_ptr<ofAppBaseWindow> parentWindow) {
-    auto window = new ofxBenG::window(parentWindow);
+    auto window = new ofxBenG::window(parentWindow, isFullscreen);
     windows.push_back(window);
     return window;
 }
@@ -32,4 +32,12 @@ ofxBenG::window *window_manager::getWindowForMonitor(std::string monitor) {
 
 std::vector<ofxBenG::window*> window_manager::getWindows() {
     return windows;
+}
+
+bool window_manager::getFullscreen() {
+    return isFullscreen;
+}
+
+void window_manager::setFullscreen(bool isFullscreen) {
+    this->isFullscreen = isFullscreen;
 }
