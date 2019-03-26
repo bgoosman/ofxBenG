@@ -34,6 +34,21 @@ namespace ofxBenG {
     private:
         ofColor color;
     };
+
+    typedef std::function<void(ofPoint)> genericDrawFunction;
+    class generic_view : public window_view {
+    public:
+        generic_view(genericDrawFunction drawFunction) : drawFunction(drawFunction) {
+
+        }
+
+        void draw(ofPoint windowSize) {
+            drawFunction(windowSize);
+        }
+
+    private:
+        genericDrawFunction drawFunction;
+    };
 }
 
 #endif //PLUGANDPLAYCAM_WINDOW_VIEW_H

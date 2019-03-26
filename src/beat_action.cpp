@@ -46,7 +46,7 @@ void beat_action::schedule(float baseBeat, float beatsFromBase, beat_action *act
 }
 
 void beat_action::schedule(float beatsFromNow, beat_action *action) {
-    schedule(ofxBenG::ableton::getInstance()->getBeat(), beatsFromNow, action);
+    schedule(ofxBenG::ableton()->getBeat(), beatsFromNow, action);
 }
 
 void beat_action::schedule(float beatsFromNow, std::function<void()> action) {
@@ -54,16 +54,21 @@ void beat_action::schedule(float beatsFromNow, std::function<void()> action) {
 }
 
 void beat_action::scheduleOnNthBeatFromNow(int wholeBeatsFromNow, beat_action *action) {
-    float beat = floor(ofxBenG::ableton::getInstance()->getBeat() + wholeBeatsFromNow);
+    float beat = floor(ofxBenG::ableton()->getBeat() + wholeBeatsFromNow);
     schedule(beat, 0, action);
 }
 
+void beat_action::scheduleOnNthBeatFromNow(int wholeBeatsFromNow, std::function<void()> action) {
+    float beat = floor(ofxBenG::ableton()->getBeat() + wholeBeatsFromNow);
+    schedule(beat, 0, new generic_action(action));
+}
+
 void beat_action::scheduleNextWholeBeat(beat_action *action) {
-    schedule(ofxBenG::ableton::getInstance()->getNextWholeBeat(), 0, action);
+    schedule(ofxBenG::ableton()->getNextWholeBeat(), 0, action);
 }
 
 void beat_action::scheduleNextWholeMeasure(beat_action *action) {
-    float beat = ofxBenG::ableton::getInstance()->getBeat();
+    float beat = ofxBenG::ableton()->getBeat();
     while (int(floor(beat)) % 4 != 0) beat += 1;
     schedule(floor(beat), 0, action);
 }
@@ -85,7 +90,7 @@ void beat_action::updateRunningActions() {
         beat_action *action = *it;
         action->update();
         if (action->isDone()) {
-//            std::cout << ofxBenG::ableton::getInstance()->getBeat() << " deleting action " << action->getLabel() << std::endl;
+//            ofxBenG::ableton()->log(" deleting action " + action->getLabel());
             it = this->runningActions.erase(it);
             delete action;
         } else {
@@ -98,7 +103,7 @@ void beat_action::queueTriggeredActions() {
     beat_action *nextAction;
     while (scheduledActions.size() > 0) {
         nextAction = scheduledActions.top();
-        if (ofxBenG::ableton::getInstance()->getBeat() >= nextAction->getTriggerBeat()) {
+        if (ofxBenG::ableton()->getBeat() >= nextAction->getTriggerBeat()) {
             scheduledActions.pop();
             runningActions.push_back(nextAction);
             nextAction->start();
@@ -115,7 +120,7 @@ float beat_action::getTriggerBeat() {
 flicker::flicker(ofxBenG::video_stream *stream,
         float blackoutLengthBeats,
         float videoLengthBeats,
-        ofxBenG::etc_element *lightBoard,
+        ofxBenG::etc_element_osc_proxy *lightBoard,
         float faderNumber,
         float lightLevelMin,
         float lightLevelMax,
@@ -133,7 +138,7 @@ flicker::flicker(ofxBenG::video_stream *stream,
         isHoldingFrame(false),
         holdFrame(nullptr) {
     recordingFps = stream->getFps();
-    int const size = ofxBenG::utilities::beatsToSeconds(videoLengthBeats, ofxBenG::ableton::getInstance()->getTempo()) * recordingFps;
+    int const size = ofxBenG::utilities::beatsToSeconds(videoLengthBeats, ofxBenG::ableton()->getTempo()) * recordingFps;
     buffer = stream->makeBuffer(size);
     header = new ofxPm::VideoHeader;
     renderer = new ofxPm::BasicVideoRenderer;
@@ -168,9 +173,9 @@ void flicker::startThisAction() {
     // Play last recording forwards
     if (lastFlicker != nullptr) {
         std::cout << ofxBenG::ableton()->getBeat() << ": Start playing last recording forwards" << std::endl;
-//        auto lastHeader = lastFlicker->getHeader();
-//        renderer->setup(*lastHeader);
-//        executeAction(new pan_video(lastHeader, lastFlicker->getVideoLengthBeats(), videoLengthBeats, ofxBenG::ableton()->getTempo(), recordingFps, pan_video::PLAY_FORWARDS));
+        auto lastHeader = lastFlicker->getHeader();
+        renderer->setup(*lastHeader);
+        executeAction(new pan_video(lastHeader, lastFlicker->getVideoLengthBeats(), videoLengthBeats, ofxBenG::ableton()->getTempo(), recordingFps, pan_video::PLAY_FORWARDS));
     }
 
     // Fade in the lights
@@ -190,7 +195,7 @@ void flicker::startThisAction() {
 
     // Stop recording, fade out the lights, and hold the video
     schedule(acc, [this]() {
-        std::cout << ofxBenG::ableton::getInstance()->getBeat() << ": Start fading out" << std::endl;
+        std::cout << ofxBenG::ableton()->getBeat() << ": Start fading out" << std::endl;
         holdFrame = renderer->getLastTexture();
         buffer->stop();
         executeAction(fade(lightLevelMax, lightLevelMin));
@@ -198,7 +203,7 @@ void flicker::startThisAction() {
     acc += videoLengthBeats;
 
     schedule(acc, [this]() {
-        std::cout << ofxBenG::ableton::getInstance()->getBeat() << ": Start playing this recording backwards" << std::endl;
+        std::cout << ofxBenG::ableton()->getBeat() << ": Start playing this recording backwards" << std::endl;
         holdFrame = nullptr;
         executeAction(new pan_video(header, videoLengthBeats, videoLengthBeats, ofxBenG::ableton()->getTempo(), recordingFps, pan_video::PLAY_BACKWARDS));
     });
@@ -241,11 +246,11 @@ lfo_action::lfo_action(float frequency, float startY, bool isHolding)
 }
 
 void lfo_action::startThisAction() {
-    phase -= beatsToRadian(ofxBenG::ableton::getInstance()->getBeat());
+    phase -= beatsToRadian(ofxBenG::ableton()->getBeat());
 }
 
 void lfo_action::updateThisAction() {
-    float const beat = ofxBenG::ableton::getInstance()->getBeat();
+    float const beat = ofxBenG::ableton()->getBeat();
     float y = sin(beat * TWO_PI * frequency + phase);
     if (!isHolding)
         ofNotifyEvent(onLfoValue, y);
@@ -268,7 +273,7 @@ void lfo_action::setFrequency(float value) {
 }
 
 float lfo_action::beatsToRadian(float beat) {
-    float secondsPerBeat = 60.0f / ofxBenG::ableton::getInstance()->getTempo();
+    float secondsPerBeat = 60.0f / ofxBenG::ableton()->getTempo();
     return beat * secondsPerBeat * frequency * TWO_PI;
 }
 
@@ -289,11 +294,11 @@ void lerp_action::startThisAction() {
 
 void lerp_action::updateThisAction() {
     float const currentBeat = ofxBenG::ableton()->getBeat();
-    onValue(ofMap(currentBeat - startBeat, startBeat, endBeat, 0, 1, true), myMin, myMax);
+    onValue(ofMap(currentBeat, startBeat, endBeat, 0, 1, true), myMin, myMax);
 }
 
 bool lerp_action::isThisActionDone() {
-    return true;
+    return ofxBenG::ableton()->getBeat() > endBeat;
 }
 
 std::string lerp_action::getLabel() {

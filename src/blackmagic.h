@@ -86,9 +86,11 @@ namespace ofxBenG {
         }
         
         void newFrame(ofPixels& pixels) {
-            frame = ofxPm::VideoFrame::newVideoFrame(pixels);
-            frame.getTextureRef();
-            newFrameEvent.notify(this, frame);
+            if (pixels.isAllocated()) {
+                frame = ofxPm::VideoFrame::newVideoFrame(pixels);
+                frame.getTextureRef();
+                newFrameEvent.notify(this, frame);
+            }
         }
         
         float getFps() {

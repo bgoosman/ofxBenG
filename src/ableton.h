@@ -33,6 +33,10 @@ namespace ofxBenG {
             return link.tempo();
         }
 
+        void log(std::string message) {
+            std::cout << getBeat() << ": " << message << std::endl;
+        }
+
         void drawLink() {
             ofxAbletonLink::Status status = link.update();
             int quantum = (int) ceil(link.quantum());
@@ -61,6 +65,10 @@ namespace ofxBenG {
             ofSetColor(0);
             ofDrawBitmapString("Tempo: " + ofToString(link.tempo()) + " Beats: " + ofToString(status.beat) + " Phase: " + ofToString(status.phase), 20, 20);
             ofDrawBitmapString("Number of peers: " + ofToString(link.numPeers()), 20, 40);
+        }
+
+        bool isTrackPresent(std::string track) {
+            return live.getTrack(track) != NULL;
         }
 
         void setBeatsPerMinute(double beatsPerMinute) {
@@ -98,8 +106,16 @@ namespace ofxBenG {
             return ofxBenG::utilities::closeToInteger(getBeat());
         }
 
+        void play() {
+            live.play();
+        }
+
         void stopAll() {
             live.stop();
+        }
+        
+        ofxAbletonLiveTrack *getMasterTrack() {
+            return live.getMasterTrack();
         }
 
         ofxAbletonLiveTrack *getTrack(std::string trackName) {

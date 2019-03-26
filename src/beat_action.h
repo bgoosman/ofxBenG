@@ -38,6 +38,7 @@ namespace ofxBenG {
         virtual void schedule(float beatsFromNow, beat_action *action);
         virtual void schedule(float beatsFromNow, std::function<void()> action);
         virtual void scheduleOnNthBeatFromNow(int wholeBeatsFromNow, beat_action *action);
+        virtual void scheduleOnNthBeatFromNow(int wholeBeatsFromNow, std::function<void()> action);
         virtual void scheduleNextWholeBeat(beat_action *action);
         virtual void scheduleNextWholeMeasure(beat_action *action);
         virtual void start();
@@ -188,24 +189,25 @@ namespace ofxBenG {
 
         virtual void startThisAction() {
             delayFrames = originalLengthBeats * (60 / bpm) * fps;
-            speed = originalLengthBeats / targetLengthBeats;
-            startBeat = ofxBenG::ableton::getInstance()->getBeat();
+            startBeat = ofxBenG::ableton()->getBeat();
             header->setDelayFrames(playForwards ? delayFrames : 0);
-            std::cout << ofxBenG::ableton::getInstance()->getBeat() << ": startPlayingBeat=" << startBeat
+            std::cout << ofxBenG::ableton()->getBeat() << ": startPlayingBeat=" << startBeat
                       << ", originalLengthBeats=" << originalLengthBeats
                       << ", targetLengthBeats=" << targetLengthBeats
                       << std::endl;
         }
 
         virtual void updateThisAction() {
-            float amount = (ofxBenG::ableton::getInstance()->getBeat() - startBeat) / targetLengthBeats;
+            float amount = (ofxBenG::ableton()->getBeat() - startBeat) / targetLengthBeats;
             float lerp = ofLerp(0, delayFrames, amount);
             float frames = (playForwards) ? delayFrames - lerp : lerp;
+            std::cout << "setDelayFrames(" << frames
+                      << std::endl;
             header->setDelayFrames(frames);
         }
 
         virtual bool isThisActionDone() {
-            return ofxBenG::ableton::getInstance()->getBeat() >= startBeat + targetLengthBeats;
+            return ofxBenG::ableton()->getBeat() >= startBeat + targetLengthBeats;
         }
 
         virtual std::string getLabel() {
@@ -219,7 +221,6 @@ namespace ofxBenG {
         float originalLengthBeats;
         float targetLengthBeats;
         float delayFrames;
-        float speed;
         float bpm;
         float fps;
         bool playForwards;
@@ -231,7 +232,7 @@ namespace ofxBenG {
         flicker(ofxBenG::video_stream *stream,
                 float blackoutLengthBeats,
                 float videoLengthBeats,
-                ofxBenG::etc_element *lightBoard,
+                ofxBenG::etc_element_osc_proxy *lightBoard,
                 float faderNumber,
                 float lightLevelMin,
                 float lightLevelMax,
@@ -254,7 +255,7 @@ namespace ofxBenG {
         ofxPm::VideoHeader *header;
         ofxPm::BasicVideoRenderer *renderer;
         ofTexture *holdFrame;
-        ofxBenG::etc_element *lightBoard;
+        ofxBenG::etc_element_osc_proxy *lightBoard;
         ofxBenG::flicker *lastFlicker;
         float blackoutLengthBeats;
         float videoLengthBeats;
@@ -353,12 +354,12 @@ namespace ofxBenG {
         };
 
         virtual void startThisAction() {
-            startBeat = ofxBenG::ableton::getInstance()->getBeat();
+            startBeat = ofxBenG::ableton()->getBeat();
             ofxBenG::audio::getInstance()->add(tone);
         }
 
         virtual bool isThisActionDone() {
-            return ofxBenG::ableton::getInstance()->getBeat() >= startBeat + durationBeats;
+            return ofxBenG::ableton()->getBeat() >= startBeat + durationBeats;
         }
 
         virtual std::string getLabel() {

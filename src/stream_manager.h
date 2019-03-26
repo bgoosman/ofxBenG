@@ -160,21 +160,25 @@ namespace ofxBenG {
         }
 
         void addVideoStream(ofVideoDevice &device) {
+            ofxBenG::video_stream *stream;
             if (device.deviceName == "PS3-Eye") {
-                addPs3Eye();
+                stream = addPs3Eye();
+            } else if (device.deviceName == "Blackmagic UltraStudio Mini Recorder") {
+                stream = addBlackMagic();
             } else {
                 int width = defaultWidth;
                 int height = defaultHeight;
                 std::cout << "Adding video stream at (" << width << ", " << height << ")" << std::endl;
                 auto grabber = new ofxPm::VideoGrabber();
+                grabber->setPixelFormat(OF_PIXELS_YV12);
                 grabber->setDeviceID(device.id);
                 grabber->setDesiredFrameRate(defaultFps);
                 grabber->setFps(defaultFps);
                 grabber->initGrabber(defaultWidth, defaultHeight);
-                auto stream = new video_stream(device.deviceName, grabber, defaultBufferSize);
-                streams.push_back(stream);
-                ofNotifyEvent(onVideoStreamAdded, *stream);
+                stream = new video_stream(device.deviceName, grabber, defaultBufferSize);
             }
+            streams.push_back(stream);
+            ofNotifyEvent(onVideoStreamAdded, *stream);
         }
 
         video_stream *addPs3Eye() {
@@ -182,12 +186,13 @@ namespace ofxBenG {
             int videoHeight = 480;
             int fps = 60;
             auto grabber = new ofxPm::VideoGrabber();
-            grabber->setGrabber(std::make_shared<ofxPS3EyeGrabber>());
+            auto ps3Grabber = std::make_shared<ofxPS3EyeGrabber>();
+            grabber->setGrabber(ps3Grabber);
             grabber->setDesiredFrameRate(fps);
             grabber->initGrabberWithUpdate(videoWidth, videoHeight);
             grabber->update();
+            ps3Grabber->setFlipHorizontal(true);
             auto stream = new video_stream(ofxBenG::stream_manager::ps3eye, grabber, defaultBufferSize);
-            streams.push_back(stream);
             std::cout << "PS3 Eye capturing at resolution (" << videoWidth << ", " << videoHeight << ")" << std::endl;
             return stream;
         }
@@ -199,10 +204,10 @@ namespace ofxBenG {
             if (stream == nullptr) {
                 auto grabber = new ofxBenG::BlackMagicVideoSource();
                 if (grabber->setup(defaultFps, defaultWidth, defaultHeight)) {
-                    auto stream = new video_stream(ofxBenG::stream_manager::blackmagic, (ofxPm::VideoGrabber *) grabber, defaultBufferSize);
+                    stream = new video_stream(ofxBenG::stream_manager::blackmagic, (ofxPm::VideoGrabber *) grabber, defaultBufferSize);
                     ofVec2f dimensions = grabber->getDimensions();
-                    std::cout << "capturing at resolution (" << dimensions[0] << ", " << dimensions[1] << ")"
-                              << std::endl;
+                    streams.push_back(stream);
+                    std::cout << "BlackMagic UltraStudio Mini Recorder capturing at (" << dimensions[0] << ", " << dimensions[1] << ", " << defaultFps << ")" << std::endl;
                 } else {
                     std::cout << "failed to initialize blackmagic" << std::endl;
                 }
@@ -253,7 +258,7 @@ namespace ofxBenG {
         int defaultBufferSize;
         int defaultWidth;
         int defaultHeight;
-        int defaultFps;
+        float defaultFps;
     };
 
 }; /* ofxBenG */
