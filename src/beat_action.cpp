@@ -6,6 +6,10 @@ bool beat_action_comparator::operator()(beat_action *first, beat_action *second)
     return first->getTriggerBeat() > second->getTriggerBeat();
 }
 
+bool time_action_comparator::operator()(beat_action *first, beat_action *second) {
+    return first->getTriggerMicroseconds() > second->getTriggerMicroseconds();
+}
+
 beat_action::beat_action() {
 }
 
@@ -18,13 +22,18 @@ void beat_action::update() {
     updateThisAction();
 }
 
-void beat_action::executeAction(beat_action *action) {
+void beat_action::cue(beat_action *action) {
     runningActions.push_back(action);
     action->startThisAction();
 }
 
+void beat_action::cue(std::function<void()> action) {
+    auto genericAction = new ofxBenG::generic_action(action);
+    runningActions.push_back(genericAction);
+    genericAction->startThisAction();
+}
+
 void beat_action::start() {
-//    std::cout << ofToString(currentBeat) << ": Starting " << this->getLabel() << std::endl;
     queueTriggeredActions();
     startThisAction();
 }
@@ -35,14 +44,24 @@ bool beat_action::isThisActionDone() {
 
 void beat_action::clearScheduledActions() {
     scheduledActions = std::priority_queue<ofxBenG::beat_action *, std::vector<ofxBenG::beat_action *>, ofxBenG::beat_action_comparator>();
+    scheduledTimeActions.empty();
 }
 
 void beat_action::schedule(float baseBeat, float beatsFromBase, beat_action *action) {
     float const scheduledBeat = baseBeat + beatsFromBase;
-//    std::cout << currentBeat << ": Scheduling " << action->getLabel() << " action at beat " << scheduledBeat
-//              << std::endl;
     action->setTriggerBeat(scheduledBeat);
     scheduledActions.push(action);
+}
+
+void beat_action::cueInSeconds(float secondsFromNow, beat_action *action) {
+    uint64_t microsecondsFromNow = (uint64_t)floor(1e6 * secondsFromNow);
+    uint64_t scheduledMicroseconds = ofGetElapsedTimeMicros() + microsecondsFromNow;
+    action->setTriggerMicroseconds(scheduledMicroseconds);
+    scheduledTimeActions.push(action);
+}
+
+void beat_action::cueInSeconds(float secondsFromNow, std::function<void()> action) {
+    cueInSeconds(secondsFromNow, new generic_action(action));
 }
 
 void beat_action::schedule(float beatsFromNow, beat_action *action) {
@@ -73,8 +92,20 @@ void beat_action::scheduleNextWholeMeasure(beat_action *action) {
     schedule(floor(beat), 0, action);
 }
 
+float beat_action::getTriggerBeat() {
+    return triggerBeat;
+}
+
 void beat_action::setTriggerBeat(float value) {
     this->triggerBeat = value;
+}
+
+uint64_t beat_action::getTriggerMicroseconds() {
+    return triggerMicroseconds;
+}
+
+void beat_action::setTriggerMicroseconds(uint64_t value) {
+    this->triggerMicroseconds = value;
 }
 
 bool beat_action::isDone() {
@@ -82,7 +113,7 @@ bool beat_action::isDone() {
 }
 
 bool beat_action::isScheduleDone() {
-    return scheduledActions.size() == 0 && runningActions.size() == 0;
+    return scheduledActions.size() == 0 && scheduledTimeActions.size() == 0 && runningActions.size() == 0;
 }
 
 void beat_action::updateRunningActions() {
@@ -90,7 +121,6 @@ void beat_action::updateRunningActions() {
         beat_action *action = *it;
         action->update();
         if (action->isDone()) {
-//            ofxBenG::ableton()->log(" deleting action " + action->getLabel());
             it = this->runningActions.erase(it);
             delete action;
         } else {
@@ -101,6 +131,7 @@ void beat_action::updateRunningActions() {
 
 void beat_action::queueTriggeredActions() {
     beat_action *nextAction;
+    
     while (scheduledActions.size() > 0) {
         nextAction = scheduledActions.top();
         if (ofxBenG::ableton()->getBeat() >= nextAction->getTriggerBeat()) {
@@ -111,10 +142,17 @@ void beat_action::queueTriggeredActions() {
             break;
         }
     }
-}
-
-float beat_action::getTriggerBeat() {
-    return triggerBeat;
+    
+    while (scheduledTimeActions.size() > 0) {
+        nextAction = scheduledTimeActions.top();
+        if (ofGetElapsedTimeMicros() >= nextAction->getTriggerMicroseconds()) {
+            scheduledTimeActions.pop();
+            runningActions.push_back(nextAction);
+            nextAction->start();
+        } else {
+            break;
+        }
+    }
 }
 
 flicker::flicker(ofxBenG::video_stream *stream,
@@ -175,12 +213,12 @@ void flicker::startThisAction() {
         std::cout << ofxBenG::ableton()->getBeat() << ": Start playing last recording forwards" << std::endl;
         auto lastHeader = lastFlicker->getHeader();
         renderer->setup(*lastHeader);
-        executeAction(new pan_video(lastHeader, lastFlicker->getVideoLengthBeats(), videoLengthBeats, ofxBenG::ableton()->getTempo(), recordingFps, pan_video::PLAY_FORWARDS));
+        cue(new pan_video(lastHeader, lastFlicker->getVideoLengthBeats(), videoLengthBeats, ofxBenG::ableton()->getTempo(), recordingFps, pan_video::PLAY_FORWARDS));
     }
 
     // Fade in the lights
     std::cout << ofxBenG::ableton()->getBeat() << ": Start fading in" << std::endl;
-    executeAction(fade(lightLevelMin, lightLevelMax));
+    cue(fade(lightLevelMin, lightLevelMax));
     acc += videoLengthBeats;
 
     // Start recording and play this buffer live
@@ -198,14 +236,14 @@ void flicker::startThisAction() {
         std::cout << ofxBenG::ableton()->getBeat() << ": Start fading out" << std::endl;
         holdFrame = renderer->getLastTexture();
         buffer->stop();
-        executeAction(fade(lightLevelMax, lightLevelMin));
+        cue(fade(lightLevelMax, lightLevelMin));
     });
     acc += videoLengthBeats;
 
     schedule(acc, [this]() {
         std::cout << ofxBenG::ableton()->getBeat() << ": Start playing this recording backwards" << std::endl;
         holdFrame = nullptr;
-        executeAction(new pan_video(header, videoLengthBeats, videoLengthBeats, ofxBenG::ableton()->getTempo(), recordingFps, pan_video::PLAY_BACKWARDS));
+        cue(new pan_video(header, videoLengthBeats, videoLengthBeats, ofxBenG::ableton()->getTempo(), recordingFps, pan_video::PLAY_BACKWARDS));
     });
     acc += videoLengthBeats;
 
@@ -281,28 +319,28 @@ void lfo_action::setHolding(bool value) {
     isHolding = value;
 }
 
-lerp_action::lerp_action(float durationBeats, floatFunction onValue)
-        : durationBeats(durationBeats),
+lerp_action::lerp_action(float seconds, floatFunction onValue)
+        : microseconds(seconds * MICROSECONDS_IN_SECOND),
           onValue(onValue) {
 
 }
 
 void lerp_action::startThisAction() {
-    startBeat = ofxBenG::ableton()->getBeat();
-    endBeat = startBeat + durationBeats;
+    startMicroseconds = ofGetElapsedTimeMicros();
+    endMicroseconds = startMicroseconds + microseconds;
 }
 
 void lerp_action::updateThisAction() {
-    float const currentBeat = ofxBenG::ableton()->getBeat();
-    onValue(ofMap(currentBeat, startBeat, endBeat, 0, 1, true), myMin, myMax);
+    float const currentMicros = ofGetElapsedTimeMicros();
+    onValue(ofMap(currentMicros, startMicroseconds, endMicroseconds, 0, 1, true), myMin, myMax);
 }
 
 bool lerp_action::isThisActionDone() {
-    return ofxBenG::ableton()->getBeat() > endBeat;
+    return ofGetElapsedTimeMicros() > endMicroseconds;
 }
 
 std::string lerp_action::getLabel() {
-    return "lerp_action { startBeat:" + ofToString(startBeat) + ", endBeat:" + ofToString(endBeat) + " }";
+    return "lerp_action { startMicroseconds:" + ofToString(startMicroseconds) + ", endMicroseconds:" + ofToString(endMicroseconds) + " }";
 }
 
 float lerp_action::map(float value, float targetMin, float targetMax) {

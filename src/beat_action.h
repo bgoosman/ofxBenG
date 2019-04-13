@@ -15,6 +15,10 @@
 #include "video_stream.h"
 #include "etc_element.h"
 
+#define MICROSECONDS_IN_SECOND 1e6
+#define UNDEFINED_MICROSECONDS 0xFFFFFFFFFFFFFFFF
+#define UNDEFINED_BEAT -1
+
 namespace ofxBenG {
 
     class beat_action;
@@ -24,16 +28,24 @@ namespace ofxBenG {
         bool operator()(beat_action *first, beat_action *second);
     };
 
+    class time_action_comparator {
+    public:
+        bool operator()(beat_action *first, beat_action *second);
+    };
+
     class beat_action {
     public:
         beat_action();
         virtual ~beat_action();
         virtual std::string getLabel() = 0;
-        virtual void executeAction(beat_action *action);
+        virtual void cue(beat_action *action);
+        virtual void cue(std::function<void()> action);
         virtual void startThisAction() = 0;
         virtual void updateThisAction() = 0;
         virtual bool isThisActionDone();
         virtual void clearScheduledActions();
+        virtual void cueInSeconds(float secondsFromNow, beat_action *action);
+        virtual void cueInSeconds(float secondsFromNow, std::function<void()> action);
         virtual void schedule(float baseBeat, float beatsFromBase, beat_action *action);
         virtual void schedule(float beatsFromNow, beat_action *action);
         virtual void schedule(float beatsFromNow, std::function<void()> action);
@@ -45,17 +57,21 @@ namespace ofxBenG {
         virtual void update();
         virtual float getTriggerBeat();
         virtual void setTriggerBeat(float value);
+        virtual uint64_t getTriggerMicroseconds();
+        virtual void setTriggerMicroseconds(uint64_t value);
         virtual bool isDone();
 
     protected:
         std::deque<ofxBenG::beat_action *> runningActions;
         std::priority_queue<ofxBenG::beat_action *, std::vector<ofxBenG::beat_action *>, ofxBenG::beat_action_comparator> scheduledActions;
+        std::priority_queue<ofxBenG::beat_action *, std::vector<ofxBenG::beat_action *>, ofxBenG::time_action_comparator> scheduledTimeActions;
 
     private:
         virtual void updateRunningActions();
         virtual void queueTriggeredActions();
         bool isScheduleDone();
-        float triggerBeat;
+        float triggerBeat = UNDEFINED_BEAT;
+        uint64_t triggerMicroseconds = UNDEFINED_MICROSECONDS;
     };
 
     class lfo_action : public beat_action {
@@ -83,7 +99,7 @@ namespace ofxBenG {
     typedef std::function<void(float, float, float)> floatFunction;
     class lerp_action : public beat_action {
     public:
-        lerp_action(float durationBeats, floatFunction onValue);
+        lerp_action(float seconds, floatFunction onValue);
         virtual void startThisAction();
         virtual void updateThisAction();
         virtual bool isThisActionDone();
@@ -91,11 +107,11 @@ namespace ofxBenG {
         float map(float value, float targetMin, float targetMax);
 
     private:
-        float durationBeats;
+        float microseconds;
         float const myMin = 0;
         float const myMax = 1;
-        float startBeat;
-        float endBeat;
+        uint64_t startMicroseconds;
+        uint64_t endMicroseconds;
         floatFunction onValue;
     };
 
